@@ -1,20 +1,20 @@
 Classes taken:
-  CSE 
+  CSE:
     2050
     2500
     3100
     3140
     3500
     3666
-  Math 
+  Math: 
     Calc 3 
     Linear Algebra
     Dif EQ 
-  English
+  English:
     1007
-  Geography
+  Geography:
     1700
-  Philosophy
+  Philosophy:
     1104
-  Economics
+  Economics:
     Micro 1201
