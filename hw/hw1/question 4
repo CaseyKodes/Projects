@@ -1,0 +1,26 @@
+# Translate the following code 
+# for (i=0; i<a; i+=1)
+#	if((i&0xA5)!=0)
+#		r ^= i <<8;
+#	else 
+#		r += i >>4;
+# use at most 12 instructions 
+# a,  i , and r are stored in 
+# s1, s2, and s3 respectivly 
+# and are all loaded
+
+loop: 
+	andi t4, s2, 0xA5
+	bne t4, x0, if
+else:
+	srai t3, s2, 4
+	add s3, s3, t3
+	addi s2, s2, 1
+	blt s2, s1, loop 
+	bne x0, x0 exit
+if: 
+	slli t3, s2, 8
+	xor s3, s2, t3
+	addi s2, s2, 1
+	blt s2, s1, loop 
+exit:

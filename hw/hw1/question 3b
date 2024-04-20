@@ -1,0 +1,22 @@
+	addi s1, x0, 0, # s1 = 0
+	add t0, x0, s0, # t0 is copy of s0
+
+	# this call is used to see if s0 is negative
+	lui t1, 0x8 # same as 0b 1000 000 0000 0000 0000 0000 0000 0000
+	and t2, t0, t1 # t1 now tells if s0 is negative or not
+	beq t2, t1, negative
+	beq x0, x0, loop
+	
+negative: 
+	# this code works like finding the reciprical number of a negative 
+	xori t2, t2, -1 # this works like running not on t2 
+	addi t2, t2, 1 
+	
+	# same code fomr part a 
+loop:
+	and t1, s0, t0
+	beq t1, x0, skip
+	addi s1, s1, 1
+skip
+	slli t0, t0, 1
+	bne t0, x0, loop

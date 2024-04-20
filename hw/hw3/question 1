@@ -1,0 +1,49 @@
+# translate foo 
+# s1 is count, s2 is i 
+
+# takes in an integer aray and a value n
+# the way the integer array is passed is that the address
+# of the first element in the array is passed in a0
+foo:
+# going to need to store things in the stack since there is a
+# function call within a function 
+# what to store is unclear for now is either count or n or both
+	addi s2, x0, 0 # i is set to 0
+	addi sp, sp, -8 # move stack pointer
+	sw a1, 0(sp) # storing n on the stack 
+	sw ra, 4(sp) # storing return address onstack 
+	loop:
+		# passing n-i to a1 for bar 
+		sub a1, a1, s2 
+		# passing address of d[i] to a0		
+		# need to shift because each address of the array are 
+		# 4 bytes apart since it it an integer aray 
+		slli t1, s2, 2 
+		add a0, a0, t1	
+		
+		# some functionality for bar
+		jal ra, bar
+		# bar returns t in a0
+		# if t>0 we incriment count 
+		bgt a0, x0, upcount
+		beq x0, x0, skip
+		upcount: 
+			addi s1, s1, 1
+		skip:		
+		addi s2, s2, 1 # incriment i 
+		blt s2, a1, loop # see if i is less than n if so loop
+		
+	add a0, s1, x0 # storing count in a0 to return 
+	lw ra, 4(sp)
+	addi sp, sp, -4
+	jalr x0, ra, 0 # leaving function
+	
+# just for testing to make sure foo will compile
+bar:
+	jalr x0, ra, 0
+	
+main:
+	lui a0, 0x10100
+	addi a1, x0, 6
+	jal ra, foo
+	

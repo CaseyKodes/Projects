@@ -1,0 +1,62 @@
+# translating merge sort 
+# merge sort takes an array and its length as parameters
+msort:
+	# need to allocate memory on the stack for the array c[256]
+	# this is done by moving the stack pointer 4*256 since it is an int array
+	add sp, sp, -1024 # moves stack pointer so there is now room for c
+	# no need to store anything yet just need to make the memory avalible for c
+	
+	# storing n and ra in the stack 
+	addi sp, sp, -8
+	sw a1, 0(sp) 
+	sw ra, 4(sp)	
+	
+	# set t1 to 1 to be used in checking if n<=1
+	addi t1, x0, 1 
+	ble a1, t1, return
+	
+	# n1 which is n/2 is now in the stack 
+	srli t2, a1, 1 
+	addi sp, sp, -4
+	sw t2, 0(sp)
+	
+	# re-call of msort with normal array and half n 
+	# this means the call will work the same as only passing half the array 
+	add a1, t2, x0
+	jal ra, msort
+	# after first mergsort call we need to call merge sort on the other half of the list
+	# this means calling at the middle address with n-n1
+	lw t1, 0(sp) # loading n1 from the stack
+	lw a1, 4(sp) # loading n from the stack 
+	sub a1, a1, t1 # a1 is now n-n1 
+	slli t1, t1, 2
+	
+	# this line is not great
+	add a0, a0, t1 # a0 is now the address of d[n1]
+	
+	addi sp, sp, -8
+	sw a0, 0(sp) # address of d[n1] on the stack 
+	sw a1, 4(sp) # n-n1 in the stack 
+	# recall msort with the second half of the list
+	jal ra, msort
+	lw a4, 0(sp) # address of d[n1]
+	lw a3, 4(sp) # n-n1
+	lw a2, 8(sp) # n1
+	add sp, sp, 12 # move stack pointer back now it is pointing at n
+	
+	# its not my favorite thing to us a0 here since i feel like it could have been changed
+	# but I am not sure how else to get the array d to be a function parameter for merge and copy
+	# this would mean we do not need to change a0 we just need to move it to a1
+	add a1, a0, x0
+	lw a0, 4(sp) # this is getting the address of c
+	jal ra, merge
+	
+	lw a2, 0(sp) # loading n 
+	lw a1, 4(sp) # loading address of c
+	jal ra, copy
+	
+	return:
+		# do i need to pull from the stack here 
+		# probably need to pull ra how 
+		lw ra, 0(sp)
+		jalr x0, ra, 0

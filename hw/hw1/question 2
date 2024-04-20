@@ -1,0 +1,25 @@
+	# loading s2 as 0c12345678
+	lui s2, 0x12345
+	addi s2, s2, 0x678
+
+	addi a7, x0, 34
+	add a0, s2, x0
+	ecall
+	
+loop:
+	slli t2, t2, 8 # shift t2
+	andi t3, s2, 0xFF # getting the last 8 bits of s2
+	add t2, t2, t3 # add last 8 bits of s2 to t2
+	srli s2, s2, 8 # shift s2
+	andi t3, s2, 0xFF # getting the last 8 bits of s2
+	bne t3, x0, loop
+
+	add s4, t2, x0 # storing t2 in s4 
+	# printing s4 in hex format
+	addi a0, x0, 10
+	addi a7, x0, 11
+	ecall 
+	
+	addi a7, x0, 34
+	add a0, s4, x0
+	ecall
