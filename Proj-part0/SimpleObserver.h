@@ -1,0 +1,80 @@
+//
+//  SimpleObserver.h
+//  
+//
+//  Created by Yufeng Wu on 12/1/22.
+//  Demonstrate how a simple observer would work
+//  This observer waits for the space bar key;
+//  after the user presses (and releases) the space bar
+//  it displays a rectangle in the middle of the window
+//  That is it!
+//  This code is meant to demonstrate the functionalities
+//  especially the Observer pattern implemented in
+//  ECGraphicViewImp.
+//
+
+#ifndef SimpleObserver_h
+#define SimpleObserver_h
+
+#include "ECObserver.h"
+#include "ECGraphicViewImp.h"
+
+
+//************************************************************
+class ECSimpleGraphicObserver : public ECObserver
+{
+public:
+    ECSimpleGraphicObserver( ECGraphicViewImp &viewIn );
+    virtual void Update();
+    
+private:
+    ECGraphicViewImp &view;
+    bool fIsSpaceBarPressed = false;
+    bool started = false;
+    bool up = false;
+    bool down = false;
+    bool stopped = true;
+    bool chooseFloor = false;
+    bool open = false;
+
+    // this is the number of floors which can change meaning we would need to change how big the boxes representing floors are 
+    int numfloors = 9; // 9 is the max that fit
+
+    // this array tells the elevator the actual position to stop at
+    std::vector<int> fhs = {800,700,600,500,400,300,200,100,000};
+
+    // this array tells the elevator what floors to stop 
+
+
+    std::vector<int> peoplespots;
+    bool person = false;
+
+    // still messing with these 
+    bool print = true;
+    int position;
+    int time = 0;
+    int timer = 0;
+    bool pause = false;
+
+    int peopleinElevator = 0; // ten is the max
+
+    // things that should not be touched
+    int limit = fhs[8];
+    int ymax = fhs[0];
+    int ymin = fhs[8];
+    int ysize = 100; // size of a square
+    int xsize = 400;
+
+    
+    int ex1 = 0, ex2 = ex1 + xsize, ey1 = 800, ey2 = ey1 + ysize; // elevator coords 
+    int newey1 = ey1;
+    int step = 5; // determines how fast the elevator moves, use either 10, 5, 2, 1 for smooth motion that will always end at the right floor
+    int r = 10;
+    int xstart = 0;
+    int ystart = 1000;
+    int coffy = 60;
+    int coffx = 5;
+    int off2 = 55;
+};
+
+#endif /*SimpleObserver_h*/ 

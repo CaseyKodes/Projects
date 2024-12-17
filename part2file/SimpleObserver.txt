@@ -1,0 +1,425 @@
+
+#include "SimpleObserver.h"
+
+//************************************************************
+
+ECSimpleGraphicObserver::ECSimpleGraphicObserver(ECGraphicViewImp& viewIn) : view(viewIn) {}
+
+void drawkeypad(ECGraphicViewImp& view)
+{
+    // for drawing the button pad
+    ECGVColor buttonColor = static_cast<ECGVColor>(5);
+    for (int i = 0; i < 300; i += 100)
+    {
+        for (int j = 0; j < 300; j += 100)
+        {
+            view.DrawRectangle(500 + i, 100 + j, 600 + i, 200 + j, 5, buttonColor);
+        }
+    }
+    // draws 1
+    view.DrawLine(550, 110, 550, 190, 3, buttonColor);
+    // draws 2
+    view.DrawLine(640, 110, 640, 190, 3, buttonColor);
+    view.DrawLine(660, 110, 660, 190, 3, buttonColor);
+    // draws 3
+    view.DrawLine(730, 110, 730, 190, 3, buttonColor);
+    view.DrawLine(750, 110, 750, 190, 3, buttonColor);
+    view.DrawLine(770, 110, 770, 190, 3, buttonColor);
+    // draws 4 
+    view.DrawLine(530, 210, 530, 290, 3, buttonColor);
+    view.DrawLine(550, 210, 560, 290, 3, buttonColor);
+    view.DrawLine(570, 210, 560, 290, 3, buttonColor);
+    // draws 5 
+    view.DrawLine(640, 210, 650, 290, 3, buttonColor);
+    view.DrawLine(660, 210, 650, 290, 3, buttonColor);
+    // draws 6
+    view.DrawLine(730, 210, 740, 290, 3, buttonColor);
+    view.DrawLine(750, 210, 740, 290, 3, buttonColor);
+    view.DrawLine(770, 210, 770, 290, 3, buttonColor);
+    // draws 7
+    view.DrawLine(520, 310, 530, 390, 3, buttonColor);
+    view.DrawLine(540, 310, 530, 390, 3, buttonColor);
+    view.DrawLine(560, 310, 560, 390, 3, buttonColor);
+    view.DrawLine(580, 310, 580, 390, 3, buttonColor);
+    // draws 8
+    view.DrawLine(610, 310, 620, 390, 3, buttonColor);
+    view.DrawLine(630, 310, 620, 390, 3, buttonColor);
+    view.DrawLine(650, 310, 650, 390, 3, buttonColor);
+    view.DrawLine(670, 310, 670, 390, 3, buttonColor);
+    view.DrawLine(690, 310, 690, 390, 3, buttonColor);
+    // draws 9
+    view.DrawLine(730, 310, 730, 390, 3, buttonColor);
+    view.DrawLine(750, 310, 770, 390, 3, buttonColor);
+    view.DrawLine(770, 310, 750, 390, 3, buttonColor);
+}
+void drawreflines(ECGraphicViewImp& view)
+{
+    for (int i = 0; i < 1000; i += 100)
+    {
+        view.DrawLine(0, i, 900, i, 1, ECGV_RED);
+        view.DrawLine(i, 0, i, 900, 1, ECGV_RED);
+    }
+}
+
+void ECSimpleGraphicObserver::Update()
+{
+    ECGVEventType evt = view.GetCurrEvent();
+    // is this space bar key released?
+    if (evt == ECGV_EV_KEY_UP_SPACE)
+    {
+        fIsSpaceBarPressed = true;
+
+        // set the view to redraw
+        // Note: call SetRedraw(true) once there is something changed in the view
+        view.SetRedraw(true);
+    }
+    if (evt == ECGV_EV_KEY_UP_G)
+    {
+        started = true;
+        view.SetRedraw(true);
+    }
+    if (evt == ECGV_EV_KEY_UP_UP && started)
+    {
+        up = true;
+        view.SetRedraw(true);
+    }
+    if (evt == ECGV_EV_KEY_UP_DOWN && started)
+    {
+        down = true;
+        view.SetRedraw(true);
+    }
+    if (evt == ECGV_EV_MOUSE_BUTTON_UP)
+    {
+        // i want to get the mouse y position and set the max floor level 
+        // of the elevator to that floor
+        // how do we get the mouse position 
+        int x, y;
+        view.GetCursorPosition(x, y);
+        // the green buttons per each floor 
+        // starting at the top and going down 
+            // we also need to account for the x coord because I am going to add a key pad off to the side 
+        if (0 < y && y < 100 && 400 < x && x < 500)
+        {
+            limit = fhs[8];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(100);
+            target[8] = true;
+        }
+        if (100 < y && y < 200 && 400 < x && x < 500)
+        {
+            limit = fhs[7];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(200);
+            target[7] = true;
+        }
+        if (200 < y && y < 300 && 400 < x && x < 500)
+        {
+            limit = fhs[6];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(300);
+            target[6] = true;
+        }
+        if (300 < y && y < 400 && 400 < x && x < 500)
+        {
+            limit = fhs[5];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(400);
+            target[5] = true;
+        }
+        if (400 < y && y < 500 && 400 < x && x < 500)
+        {
+            limit = fhs[4];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(500);
+            target[4] = true;
+        }
+        if (500 < y && y < 600 && 400 < x && x < 500)
+        {
+            limit = fhs[3];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(600);
+            target[3] = true;
+        }
+        if (600 < y && y < 700 && 400 < x && x < 500)
+        {
+            limit = fhs[2];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(700);
+            target[2] = true;
+        }
+        if (700 < y && y < 800 && 400 < x && x < 500)
+        {
+            limit = fhs[1];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(800);
+            target[1] = true;
+        }
+        if (800 < y && y < 900 && 400 < x && x < 500)
+        {
+            limit = fhs[0];
+            stopped = false;
+            person = true;
+            numpeople++;
+            peoplespots.push_back(900);
+            target[0] = true;
+        }
+
+        if (chooseFloor)
+        {
+            if (100 < y && y < 200)
+            {
+                if (500 < x && x < 600)
+                {
+                    // button 1 was pressed
+                    casenum = 1;
+                    target[0] = true;
+                    limit = fhs[0];
+                    chooseFloor = false;
+                }
+                if (600 < x && x < 700)
+                {
+                    // button 2 was pressed
+                    casenum = 2;
+                    target[1] = true;
+                    limit = fhs[1];
+                    chooseFloor = false;
+                }
+                if (700 < x && x < 800)
+                {
+                    // button 3 was pressed
+                    casenum = 3;
+                    target[2] = true;
+                    limit = fhs[2];
+                    chooseFloor = false;
+                }
+            }
+            if (200 < y && y < 300)
+            {
+                if (500 < x && x < 600)
+                {
+                    // button 4 was pressed
+                    casenum = 4;
+                    target[3] = true;
+                    limit = fhs[3];
+                    chooseFloor = false;
+                }
+                if (600 < x && x < 700)
+                {
+                    // button 5 was pressed
+                    casenum = 5;
+                    target[4] = true;
+                    limit = fhs[4];
+                    chooseFloor = false;
+                }
+                if (700 < x && x < 800)
+                {
+                    // button 6 was pressed
+                    casenum = 6;
+                    target[5] = true;
+                    limit = fhs[5];
+                    chooseFloor = false;
+                }
+            }
+            if (300 < y && y < 400)
+            {
+                if (500 < x && x < 600)
+                {
+                    // button 7 was pressed
+                    casenum = 7;
+                    target[6] = true;
+                    limit = fhs[6];
+                    chooseFloor = false;
+                }
+                if (600 < x && x < 700)
+                {
+                    // button 8 was pressed
+                    casenum = 8;
+                    target[7] = true;
+                    limit = fhs[7];
+                    chooseFloor = false;
+                }
+                if (700 < x && x < 800)
+                {
+                    // button 9 was pressed
+                    casenum = 9;
+                    target[8] = true;
+                    limit = fhs[8];
+                    chooseFloor = false;
+                }
+            }
+        }
+    }
+
+    // if this is the timer event
+    // we need to draw things here so they can stay on the screen since the timer constantly runs 
+    if (evt == ECGV_EV_TIMER)
+    {
+        // if space bar already pressed, draw a winidow
+        // Note: you need to draw this in the timer event; otherwise you won't see the rectangle
+        if (fIsSpaceBarPressed)
+        {
+            // drawing the original background for the whole thing
+            view.DrawFilledRectangle(0, 0, 900, 900, ECGV_BLACK); // main background 
+
+            // to see lines that tell us where the 100s are 
+            drawreflines(view);
+
+            // draw the representaion of floors 
+            for (int i = numfloors; i > 0; i--)
+            {
+                ECGVColor color = static_cast<ECGVColor>(1);
+                // boxes representing each floor
+                view.DrawRectangle(xstart, ystart - ysize * i, xstart + xsize, ystart - ysize * i - ysize, 5, color);
+                // buttons for each floor
+                view.DrawCircle(xstart + xsize + r + 7, ystart - ysize * i - ysize + r + off2 - 20, r, 3, ECGV_GREEN); // top button
+                view.DrawCircle(xstart + xsize + r + 7, ystart - ysize * i - ysize + r + off2 + 7, r, 3, ECGV_RED); // bottom button
+            }
+
+            // draws numbers in buttons in roman numerals 
+
+            drawkeypad(view);
+            view.SetRedraw(true); 
+
+            // this might not be nessecary 
+            switch (casenum)
+            {
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            case 4:
+                break;
+            case 5:
+                break;
+            case 6:
+                break;
+            case 7:
+                break;
+            case 8:
+                break;
+            case 9:
+                break;
+            default:
+                break;
+            }
+
+        }
+        if (person)
+        {
+            for (auto x : peoplespots)
+            {
+                view.DrawFilledCircle(450, x - 30, 10, ECGV_WHITE);
+                view.DrawLine(450, x - 30, 450, x, 10, ECGV_WHITE);
+                view.DrawLine(450, x - 20, 440, x - 10, 4, ECGV_WHITE);
+                view.DrawLine(450, x - 20, 460, x - 10, 4, ECGV_WHITE);
+                view.DrawLine(450, x - 7, 450, x, 3, ECGV_BLACK);
+            }
+        }
+        if (started)
+        {
+            if (up && !down)
+            {
+                stopped = false;
+                ey1 -= step;
+                ey2 -= step;
+                if (ey1 == limit || ey1 == ymin)
+                {
+                    up = false;
+                    stopped = true;
+                }
+                if (ey1 < ymin)
+                {
+                    ey1 += step;
+                    ey2 += step;
+                    up = false;
+                    stopped = true;
+                }
+                view.SetRedraw(true);
+            }
+            if (down && !up)
+            {
+                stopped = false;
+                ey1 += step;
+                ey2 += step;
+                if (ey1 == limit || ey1 == ymax)
+                {
+                    down = false;
+                    stopped = true;
+                }
+                if (ey1 > ymax)
+                {
+                    ey1 -= step;
+                    ey2 -= step;
+                    down = false;
+                    stopped = true;
+                }
+                view.SetRedraw(true);
+            }
+            if (stopped)
+            {
+                // this is where we will remove a person from the elevator 
+                if (peopleinElevator > 0)
+                {
+                    // going to have stopped at the pixel limit we ste previously 
+                    // this pixel limit is going to coorospond to a bool in the target array 
+                    // this will work for being able to pick up multiple people 
+                    // but if they need to be dropped of at seperate spots it will not work 
+                    if (!person)
+                    {
+                        peopleinElevator--;
+                    }
+                }
+            }
+
+            //show the elevator 
+            view.DrawFilledRectangle(ex1, ey1, ex2, ey2, ECGV_BLUE);
+            for (int i = 0; i < peopleinElevator; i++)
+            {
+                view.DrawFilledCircle(50+100*i, ey2 - 30, 10, ECGV_WHITE);
+                view.DrawLine(50 + 100 * i, ey2 - 30, 50 + 100 * i, ey2, 10, ECGV_WHITE);
+                view.DrawLine(50 + 100 * i, ey2 - 20, 50 + 100 * i -10, ey2 - 10, 4, ECGV_WHITE);
+                view.DrawLine(50 + 100 * i, ey2 - 20, 50 + 100 * i +10, ey2 - 10, 4, ECGV_WHITE);
+                view.DrawLine(50 + 100 * i, ey2 - 7, 50 + 100 * i, ey2, 3, ECGV_BLACK);
+            }
+            if (stopped && person)
+            {
+                // this in theory should make the person disappear when the elevator door opens 
+                if (peoplespots.size() > 0)
+                {
+                    auto takeout = remove(peoplespots.begin(), peoplespots.end(), ey1 + 100);
+                    peoplespots.erase(takeout, peoplespots.end());
+                }
+                open = false;
+                stopped = false;
+                chooseFloor = true;
+                peopleinElevator++;
+                person = false;
+
+            }
+        }
+        if (down && up) // this stops the elevator if both arrows are pressed in close sucession 
+        {
+            down = false;
+            up = false;
+        }
+    }
+}
+

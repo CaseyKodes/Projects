@@ -1,0 +1,13 @@
+I have just been using these files to run the code in vs code not really sure how else to explain it, 
+I think if you build the same as would be done for part0 but use all of these files it should run
+
+
+things that work
+	pause feature
+	people show and have the number on them in the elevator
+	animation is smooth
+	the people do  show outside of the elevator before they get on
+	the button lights do light up when person gets on the floor
+	program takes a given file name and makes a simulation from that file 
+things that do not work
+	does not work on command line instructions to run
