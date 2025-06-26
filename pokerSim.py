@@ -67,9 +67,9 @@ class Hand():
     # hand objects contain a list of card objects
     # they also have a rank that depends on the cards in a players hand and the cards on the board 
     # we can add and remove cards from a hand, clear a hand, get and set the rank of a hand
-    def __init__(self, cards):
+    def __init__(self, cards, numboards):
         self.cards = list()
-        self.rank = 'High Card' # default lowest value of a hand
+        self.rank = ['High Card']*max(numboards, 1) # default lowest value of a hand
         for card in cards:
             self.cards.append(card)
     def getCards(self):
@@ -83,10 +83,16 @@ class Hand():
             print('There is no card at that index.')
     def clearHand(self):
         self.cards.clear()
-    def setRank(self, rank):
-        self.rank = rank
-    def getRank(self):
-        return self.rank    
+
+    # think these two might have to change to accomodate multiple boards 
+    # added the index part
+    def setRank(self, rank, index):
+        self.rank[index] = rank
+    def getRank(self, index):
+        return self.rank[index]
+    def getRanks(self):
+        return self.rank
+      
     def __str__(self):
         toreturn = ('Hand is: ')
         for card in self.cards:
@@ -102,10 +108,13 @@ class Deck():
     def __init__(self): # creates a deck of 52 cards, 13 ranks and 4 suits
         self.deck = list()
         self.playerHands = list()
-        self.boardList = list()
+        self.boardList = []
         self.burnt = list()
+        self.winnerstr = str()
+        self.winningLevel = list()
         self.hr = Rankings.getHrank()
         self.cr = Rankings.getCrank()
+        self.numBorads = int()
 
         suits = ['Spades', 'Hearts', 'Clubs', 'Diamonds']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
@@ -141,150 +150,183 @@ class Deck():
                 newdeck.append(halfway)
             self.deck = newdeck
 
-    def dealHands(self, numPlayers, handsize): # deals to a numPlayers number of players a handsize sized hand from the top of the deck 
+    def deal(self, numPlayers, handsize, numboards): # deals to a numPlayers number of players a handsize sized hand from the top of the deck 
         for card in range(handsize):
             for player in range(numPlayers):
                 if player < len(self.playerHands):
                     self.playerHands[player].addCard(self.deck.pop(0))
                 else:
-                    self.playerHands.append(Hand([self.deck.pop(0)]))
+                    self.playerHands.append(Hand([self.deck.pop(0)], numboards))
+        self.numBorads = numboards
+        if numboards==1:
+            self.dealSingleBoard()
+        elif numboards==2:
+            self.dealDoubleBoard()
+        else:
+            pass
 
-    def dealBoard(self): # deals a flop turn and river
+    def dealSingleBoard(self): # deals a flop turn and river
+        # want to figure out how to deal 2 boards 
+        # we would need to store them in different places 
         boardDict = {'Flop':[], 'Turn':[], 'River':[]}
-        burns = []
-        burns.append(self.deck.pop(0))
+        self.burnt.append(self.deck.pop(0))
         for i in range(3):
             boardDict['Flop'].append(self.deck.pop(0))
-        burns.append(self.deck.pop(0))
+        self.burnt.append(self.deck.pop(0))
         boardDict['Turn'].append(self.deck.pop(0))
-        burns.append(self.deck.pop(0))
+        self.burnt.append(self.deck.pop(0))
         boardDict['River'].append(self.deck.pop(0))
-        self.boardList = boardDict['Flop'] + boardDict['Turn'] + boardDict['River']
-        self.burnt = burns
-
+        self.boardList.append([boardDict['Flop'] + boardDict['Turn'] + boardDict['River']])
+    
+    def dealDoubleBoard(self):
+        # same logic as for single board but we need to do flop flopr, turn turn, river river
+        boardDict1 = {'Flop':[], 'Turn':[], 'River':[]}
+        boardDict2 = {'Flop':[], 'Turn':[], 'River':[]}
+        self.burnt.append(self.deck.pop(0))
+        for i in range(3):
+            boardDict1['Flop'].append(self.deck.pop(0))
+        self.burnt.append(self.deck.pop(0))
+        for i in range(3):
+            boardDict2['Flop'].append(self.deck.pop(0))
+        self.burnt.append(self.deck.pop(0))
+        boardDict1['Turn'].append(self.deck.pop(0))
+        self.burnt.append(self.deck.pop(0))
+        boardDict2['Turn'].append(self.deck.pop(0))
+        self.burnt.append(self.deck.pop(0))
+        boardDict1['River'].append(self.deck.pop(0))
+        self.burnt.append(self.deck.pop(0))
+        boardDict2['River'].append(self.deck.pop(0))
+        self.boardList.append([boardDict1['Flop'] + boardDict1['Turn'] + boardDict1['River']])
+        self.boardList.append([boardDict2['Flop'] + boardDict2['Turn'] + boardDict2['River']])
+        
     def calcHandRanks(self): # figure out which hand has the best hand 
         # need to look at each hand in player hands and every card on the board
 
-        # lowest to highest and ranking 
         # make a dicr that has all the players hand types originally set to high 
-        # card then we will update their hand type if they make a better hand 
-
-        # this being a dictionary of strs to strs is annoying since the keys are actaully lists of hands
-        # would that mean making a card class and a hand class would make it easier to do this?
-
-        # for flushes we can check if the second to last [-2] character of the cards has at least 5 matches between the hole cards and the board cards 
+        # card then we will update their hand type if they make a better hand
+        # since it is possible we did multiple baords we need to check if we did 1 or two 
+        # if we did 1 nothing changes 
+        # if we did 2 we have to calculate the hands on each board 
         for hand in self.playerHands:
-
-            # finding flushes 
-            # instead of just adding to something telling us if we have the suits lets move the cards to be sorted by suit
-            suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
-            for card in hand.getCards():
-                suitcount[card.getSuit()].append(card)
-            for card in self.boardList:
-                suitcount[card.getSuit()].append(card)
-            if any(len(x) > 4 for x in suitcount.values()):
-                # if we are here we know we have a flush now we want to check if those cards are in order 
-                # looking for straight flush
-                for key, value in suitcount.items():
-                    rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
-                     '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
-                    for card in value:
-                        rankcount[card.getVal()]+=1
-                    straightlist = []
-                    straightlist.append(rankcount['Ace'])
-                    for value in rankcount.values():
-                        straightlist.append(value)
-                    straightLenghth = 5 # x = length of straight
-                    for starter in range(len(straightlist)-straightLenghth):
-                        if all(straightlist[starter:starter+straightLenghth]):
-                            if self.hr.index(hand.getRank()) < self.hr.index('Straight Flush'):
-                                hand.setRank('Straight Flush')
-                if self.hr.index(hand.getRank()) < self.hr.index('Flush'):
-                    hand.setRank('Flush')
-            
-            # filling how many instances of a card value there are 
-            rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
+            board=0
+            for rank in hand.getRanks():
+                # finding flushes 
+                # instead of just adding to something telling us if we have the suits lets move the cards to be sorted by suit
+                suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
+                for card in hand.getCards():
+                    suitcount[card.getSuit()].append(card)
+                for b in self.boardList[board]:
+                    for card in b:
+                        suitcount[card.getSuit()].append(card)
+                if any(len(x) > 4 for x in suitcount.values()):
+                    # if we are here we know we have a flush now we want to check if those cards are in order 
+                    # looking for straight flush
+                    for key, value in suitcount.items():
+                        rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
                          '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
-            for card in self.boardList:
-                rankcount[card.getVal()]+=1
-            for card in hand.getCards():
-                rankcount[card.getVal()]+=1
+                        for card in value:
+                            rankcount[card.getVal()]+=1
+                        straightlist = []
+                        straightlist.append(rankcount['Ace'])
+                        for value in rankcount.values():
+                            straightlist.append(value)
+                        straightLenghth = 5 # x = length of straight
+                        for starter in range(len(straightlist)-straightLenghth):
+                            if all(straightlist[starter:starter+straightLenghth]):
+                                if self.hr.index(hand.getRank(board)) < self.hr.index('Straight Flush'):
+                                    hand.setRank('Straight Flush', board)
+                    if self.hr.index(hand.getRank(board)) < self.hr.index('Flush'):
+                        hand.setRank('Flush', board)
 
-            # find straights
-            straightlist = []
-            straightlist.append(rankcount['Ace'])
-            for value in rankcount.values():
-                straightlist.append(value)
-            straightLenghth = 5 # x = length of straight
-            for starter in range(len(straightlist)-straightLenghth):
-                if all(straightlist[starter:starter+straightLenghth]):
-                    if self.hr.index(hand.getRank()) < self.hr.index('Straight'):
-                        hand.setRank('Straight')
+                # filling how many instances of a card value there are 
+                rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
+                             '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                for b in self.boardList[board]:
+                    for card in b:
+                        suitcount[card.getSuit()].append(card)
+                for card in hand.getCards():
+                    rankcount[card.getVal()]+=1
 
-            # determining based off the number of instances of that card value what type of hand a player has
-            # this is for pairs two pairs three of a kind full house and four of a kind
-            if any(x==4 for x in rankcount.values()):
-                if self.hr.index(hand.getRank()) < self.hr.index('Four of a kind'):
-                    hand.setRank('Four of a kind')
-            elif any(x==3 for x in rankcount.values()) and any(y==2 for y in rankcount.values()):
-                if self.hr.index(hand.getRank()) < self.hr.index('Full House'):
-                    hand.setRank('Full House')
-            elif any(x==3 for x in rankcount.values()):
-                if self.hr.index(hand.getRank()) < self.hr.index('Three of a kind'):
-                    hand.setRank('Three of a kind')
-            elif any(x==2 for x in rankcount.values()):
-                for key in rankcount.keys():
-                    if rankcount[key] == 2:
-                        smaller = {key: value for key, value in rankcount.items()}
-                        smaller.pop(key)
-                        if any(y==2 for y in smaller.values()):
-                            if self.hr.index(hand.getRank()) < self.hr.index('Two Pair'):
-                                hand.setRank('Two Pair')
-                            break 
-                if self.hr.index(hand.getRank()) < self.hr.index('Pair'):
-                    hand.setRank('Pair')        
+                # find straights
+                straightlist = []
+                straightlist.append(rankcount['Ace'])
+                for value in rankcount.values():
+                    straightlist.append(value)
+                straightLenghth = 5 # x = length of straight
+                for starter in range(len(straightlist)-straightLenghth):
+                    if all(straightlist[starter:starter+straightLenghth]):
+                        if self.hr.index(hand.getRank(board)) < self.hr.index('Straight'):
+                            hand.setRank('Straight', board)
+
+                # determining based off the number of instances of that card value what type of hand a player has
+                # this is for pairs two pairs three of a kind full house and four of a kind
+                if any(x==4 for x in rankcount.values()):
+                    if self.hr.index(hand.getRank(board)) < self.hr.index('Four of a kind'):
+                        hand.setRank('Four of a kind', board)
+                elif any(x==3 for x in rankcount.values()) and any(y==2 for y in rankcount.values()):
+                    if self.hr.index(hand.getRank(board)) < self.hr.index('Full House'):
+                        hand.setRank('Full House', board)
+                elif any(x==3 for x in rankcount.values()):
+                    if self.hr.index(hand.getRank(board)) < self.hr.index('Three of a kind'):
+                        hand.setRank('Three of a kind', board)
+                elif any(x==2 for x in rankcount.values()):
+                    for key in rankcount.keys():
+                        if rankcount[key] == 2:
+                            smaller = {key: value for key, value in rankcount.items()}
+                            smaller.pop(key)
+                            if any(y==2 for y in smaller.values()):
+                                if self.hr.index(hand.getRank(board)) < self.hr.index('Two Pair'):
+                                    hand.setRank('Two Pair', board)
+                                break 
+                    if self.hr.index(hand.getRank(board)) < self.hr.index('Pair'):
+                        hand.setRank('Pair', board)
+                board+=1  
             
     def calcWinner(self): # from the player hand ranks find which is the best
         winnerslevel = ''
         winnershand = []
-        for playersHand in self.playerHands:
-            if len(winnerslevel)==0:
-                winnerslevel=(playersHand.getRank())
-                winnershand.append(playersHand)
-            else:
-                if (self.hr.index(playersHand.getRank()) 
-                    > self.hr.index(winnerslevel)):
-                    # we have a worse hand then the new one
-                    winnerslevel = playersHand.getRank()
-                    winnershand.clear()
+        toreturn = ''
+        for boardIndex in range(len(self.boardList)):
+            for playersHand in self.playerHands:
+                if len(winnerslevel)==0:
+                    winnerslevel=(playersHand.getRank(boardIndex))
                     winnershand.append(playersHand)
-                elif (self.hr.index(playersHand.getRank()) 
-                    < self.hr.index(winnerslevel)):
-                    # we have the better hand do nothing 
-                    continue
-                elif (self.hr.index(playersHand.getRank()) 
-                    == self.hr.index(winnerslevel)):
-                    # we have equal rank hands
-                        # instead of just keping them both in the winners list do I 
-                        # want to figure out who actually wins it right here?
-                    # have both included anyway so then we can just deal with these two hands at a time
-                    winnershand.append(playersHand)
-                    winnershand = self.tiebreak(winnershand, winnerslevel)
-        toreturn = f'\nWinning hand rank was {winnerslevel} with a hand of: \n'
-        for hand in winnershand:
-            for card in hand.getCards():
-                toreturn += card.getStr()
-            if len(winnershand) > 1 and not hand == winnershand[-1]:
-                toreturn += '\nand '
-        return toreturn
-    
-    def tiebreak(self, hands, level):
+                else:
+                    if (self.hr.index(playersHand.getRank(boardIndex)) 
+                        > self.hr.index(winnerslevel)):
+                        # we have a worse hand then the new one
+                        winnerslevel = playersHand.getRank(boardIndex)
+                        winnershand.clear()
+                        winnershand.append(playersHand)
+                    elif (self.hr.index(playersHand.getRank(boardIndex)) 
+                        < self.hr.index(winnerslevel)):
+                        # we have the better hand do nothing 
+                        continue
+                    elif (self.hr.index(playersHand.getRank(boardIndex)) 
+                        == self.hr.index(winnerslevel)):
+                        # we have equal rank hands
+                            # instead of just keping them both in the winners list do I 
+                            # want to figure out who actually wins it right here?
+                        # have both included anyway so then we can just deal with these two hands at a time
+                        winnershand.append(playersHand)
+                        winnershand = self.tiebreak(winnershand, winnerslevel, boardIndex)
+            toreturn = f'\nWinning hand rank on Board number {boardIndex} was {winnerslevel} with a hand of: \n'
+            for hand in winnershand:
+                for card in hand.getCards():
+                    toreturn += card.getStr()
+                if len(winnershand) > 1 and not hand == winnershand[-1]:
+                    toreturn += '\nand '
+            self.winningLevel.append(winnerslevel)
+        self.winnerstr=toreturn
+        
+    def tiebreak(self, hands, level, boardIndex):
         # make a list that has all hands with all cards in a hand including board and hole cards
         fullHand = [[]]*len(hands)
         for hand in range(len(hands)):
             new = []
-            for card in self.boardList:
-                new.append(card)
+            for b in self.boardList[boardIndex]:
+                for card in b:
+                    new.append(card)
             for card in hands[hand].getCards():
                 new.append(card)
             fullHand[hand] = new
@@ -303,7 +345,7 @@ class Deck():
         # cases 1 for each hand type assuming we are only using a 52 card deck with no wild cards
         match level:
             case 'High Card':
-                print('case High Card solved')  
+                #print('case High Card solved')  
                 for i in range(0, top):
                     if fullHand[0][i] == fullHand[-1][i]:
                         continue
@@ -316,7 +358,7 @@ class Deck():
                         return hands
                 pass
             case 'Pair':
-                print('case Pair solved')
+                #print('case Pair solved')
                 # need to find the cards that the players have pairs of and compare those first
                     # this works if one player wins directly from the pair they have
                     # but if players have the same pair we then need to check their highest cards that are not paired
@@ -350,7 +392,7 @@ class Deck():
                     else: continue
                 pass
             case 'Two Pair':
-                print('case Two Pair solved')
+                #print('case Two Pair solved')
                 # can use similar logic here as for the full house case
                 for cardSpot1 in range(len(fullHand[0])-1):
                     if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1]:
@@ -408,7 +450,7 @@ class Deck():
                     else: continue
                 pass
             case 'Three of a kind':
-                print('case Three of a kind solved')
+                #print('case Three of a kind solved')
                 # could be similary to pair except now we look at three at a time
                 for cardSpot1 in range(len(fullHand[0])-2):
                     if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2]:
@@ -439,13 +481,9 @@ class Deck():
                     else: continue
                 pass
             case 'Straight': 
-                # for this one I think we can just take the 5 cards that actually 
-                #make the straight and then compare the highest to lowest in a 
-                # similar manner to high card the interesting part will be only 
-                # using the cards that make the straight
-                print('case Straight solved')
-                # instead of doing that why dont I count up the cards again find where the strihgt is and then store the top number
-                # we can get away with only storing the top number since both players will need 5 cards in a row so if they have the same top they have the same five
+                # count up the cards again find where the strihgt starts and then store the top number
+                # we can get away with only storing the top number since both players will need 
+                # 5 cards in a row so if they have the same top they have the same five
                 topnums = [0 for _ in range(len(fullHand))]
                 
                 for hand in range(len(fullHand)):
@@ -478,7 +516,7 @@ class Deck():
             case 'Flush':
                 # read comments for straight
                 # only difference is we will use the 5 cards that make the flush not the five cards that make teh straight
-                print('case Flush solved')
+                #print('case Flush solved')
                 tocompare = [[]]*len(fullHand) # the list that will hold the highest flush for all hands 
                 for hand in range(len(fullHand)): # this loop is finding what cards in a hand are actually the ones that make the flush
                     suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
@@ -511,7 +549,7 @@ class Deck():
                         return hands
                 pass
             case 'Full House':
-                print('case Full House solved')
+                #print('case Full House solved')
                 # can we use the same logic for three of a kind?
                 # sorta but if the three of a kinds are the same then we have to check the pairs
                 # so we can just use the code for 3 of a kind and then if those are the same use the code for pairs
@@ -559,7 +597,7 @@ class Deck():
                     else: continue
                 pass
             case 'Four of a kind':
-                print('case Four of a kind solved')
+                #print('case Four of a kind solved')
                 # similar to both pair and 3 of a kind we just compare to 1 more card
                 for cardSpot1 in range(len(fullHand[0])-3):
                     if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+3]:
@@ -591,12 +629,12 @@ class Deck():
                 pass
             case 'Straight Flush':
                 # similar to straigth and flush but we need to do both 
-                # we need to make sure the five cards we pull out make a straight and a flush
                 # first we should seperate the cards in each hand by suit
-                # since we are sorting everyhting at the top of the function when we then seperate things into suits we will know they are in order
-                # then for each suit we can do the thing we are doing in straights to see if there is a straight and if there is we can stroe the highest
-                # index
-                print('case Straight Flush  solved')
+                # since we are sorting everyhting at the top of the function when we then seperate things into 
+                # suits we will know they are in order
+                # then for each suit we can do the thing we are doing in straights to see if there is a 
+                # straight and if there is we can stroe the highest index
+                #print('case Straight Flush  solved')
                 # first find the cards that make the flushes 
                 tocompare = [0 for _ in range(len(fullHand))] # the list that will hold the highest flush for all hands 
                 for hand in range(len(fullHand)): # this loop is finding what cards in a hand are actually the ones that make the flush
@@ -638,22 +676,67 @@ class Deck():
         return hands
 
 if __name__ == '__main__':
-    for i in range(10):
-        print('-'*30)
-        org = Deck()
- 
-        org.shuffle()
-        org.dealHands(6,2)
-        org.dealBoard()
+    numhands = 0
+    numrounds = 0
+    while True:
+        # getting user input
+        try:
+            numboards = int(input('How many boards should be played: 1, 2, or None (0)? '))
+        except:
+            print("must input a number")
+            continue
+        try:
+            numplayers = int(input('How many players should there be? '))
+        except:
+            print("must input a number")
+            continue
+        try:
+            numcards = int(input('How many cards should each player get? '))
+        except:
+            print("must input a number")
+            continue
 
-        print('Hands')
-        for hand in org.playerHands:
-            print(hand)
-        print('Board')
-        #org.boardList.sort(reverse = True) # if we want to look at it easily we sort it but if we want to see it as it is dealt we do not
-        for card in org.boardList:
-            print(card)
+        if (numplayers*numcards + 8*numboards<= 52):
+            break
+        else:
+            print('There are now enough cards in a single deck for that to work enter different numbers.')
+
+    tothanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
+                , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
+    winninghanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
+                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
+    
+    for i in range(10000):
+        # simulating a round of poker
+        org = Deck()
+        org.shuffle()
+        org.deal(numplayers,numcards,numboards)
 
         org.calcHandRanks()
-        print(org.calcWinner())
+        org.calcWinner()
 
+        # keep track of all the hands that were dealt
+        for hand in org.playerHands:
+            for rank in hand.getRanks():
+                tothanddict[rank]+=1
+        numrounds +=1
+        numhands += len(org.playerHands)
+        for level in org.winningLevel:
+            winninghanddict[level]+=1
+
+    percentdict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
+                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
+    for key in percentdict.keys():
+        try:
+            percentdict[key] = (winninghanddict[key]/tothanddict[key])*100
+        except ZeroDivisionError:
+            print(f"Hand type -{key}- did not occur.")
+
+     # if we want to see some stats on the hands 
+    print(f'Total number of each type of hand\n {tothanddict}')
+    print(f'Number of times each type of hand won a round\n {winninghanddict}')
+    #print(f'Total number of hands {sum(tothanddict.values())}')
+    #print(f'Total number of winning hands {sum(winninghanddict.values())}')
+    print(f'The percent of a time a hand is the sole winning hand')
+    for key, value in percentdict.items():
+        print(f'{key}: {value:.3f}')
