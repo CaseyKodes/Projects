@@ -9,9 +9,15 @@
     # the hands can be any size as long as we have enough cards 
     # we can deal a board of 5 cards
     # we can calculate the rank of each players hand 
+    # break ties between players if they have te same hand rank
+    # deal any number of boards 
 # currently we can NOT
-    # break ties between stright flushes everything else works 
- 
+    # 
+# next step
+    # impliment dead and wild cards
+        # for dead we just need to make a dead card list and if the card we are looking at is in that list we do not count it for anything
+        # for wild we count it as every suit but also need to consider it as every rank, this gets tricky since if we just add 1 to every rank 
+        # for every wild card this program will always think a person has a stright even if they have less than 5 cards 
 
 import random as r
 
@@ -96,7 +102,7 @@ class Hand():
     def __str__(self):
         toreturn = ('Hand is: ')
         for card in self.cards:
-            toreturn += card.string
+            toreturn += card.getStr()
         return toreturn
     
 class Deck():
@@ -163,7 +169,9 @@ class Deck():
         elif numboards==2:
             self.dealDoubleBoard()
         else:
-            pass
+            for i in range(numboards):
+                self.dealSingleBoard()
+                
 
     def dealSingleBoard(self): # deals a flop turn and river
         # want to figure out how to deal 2 boards 
@@ -215,9 +223,10 @@ class Deck():
                 suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
                 for card in hand.getCards():
                     suitcount[card.getSuit()].append(card)
-                for b in self.boardList[board]:
-                    for card in b:
-                        suitcount[card.getSuit()].append(card)
+                if len(self.boardList) > 0:
+                    for b in self.boardList[board]:
+                        for card in b:
+                            suitcount[card.getSuit()].append(card)
                 if any(len(x) > 4 for x in suitcount.values()):
                     # if we are here we know we have a flush now we want to check if those cards are in order 
                     # looking for straight flush
@@ -241,9 +250,10 @@ class Deck():
                 # filling how many instances of a card value there are 
                 rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
                              '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
-                for b in self.boardList[board]:
-                    for card in b:
-                        suitcount[card.getSuit()].append(card)
+                if len(self.boardList) > 0:
+                    for b in self.boardList[board]:
+                        for card in b:
+                            rankcount[card.getVal()] += 1
                 for card in hand.getCards():
                     rankcount[card.getVal()]+=1
 
@@ -286,7 +296,8 @@ class Deck():
         winnerslevel = ''
         winnershand = []
         toreturn = ''
-        for boardIndex in range(len(self.boardList)):
+        loopover = max(1, len(self.boardList))
+        for boardIndex in range(loopover):
             for playersHand in self.playerHands:
                 if len(winnerslevel)==0:
                     winnerslevel=(playersHand.getRank(boardIndex))
@@ -324,9 +335,10 @@ class Deck():
         fullHand = [[]]*len(hands)
         for hand in range(len(hands)):
             new = []
-            for b in self.boardList[boardIndex]:
-                for card in b:
-                    new.append(card)
+            if len(self.boardList)>0:
+                for b in self.boardList[boardIndex]:
+                    for card in b:
+                        new.append(card)
             for card in hands[hand].getCards():
                 new.append(card)
             fullHand[hand] = new
@@ -496,8 +508,8 @@ class Deck():
                     for value in rankcount.values():
                         straightlist.append(value)
                     straightlist.reverse()
-                    for cardSpot in range(len(straightlist)):
-                        if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5)):
+                    for cardSpot in range(len(straightlist)-5):
+                        if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5)): 
                             # now we just put the highest card of the straight in some other place to check later
                             topnums[hand] = cardSpot
                             break
@@ -597,7 +609,7 @@ class Deck():
                     else: continue
                 pass
             case 'Four of a kind':
-                #print('case Four of a kind solved')
+                print('case Four of a kind solved')
                 # similar to both pair and 3 of a kind we just compare to 1 more card
                 for cardSpot1 in range(len(fullHand[0])-3):
                     if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+3]:
@@ -634,7 +646,7 @@ class Deck():
                 # suits we will know they are in order
                 # then for each suit we can do the thing we are doing in straights to see if there is a 
                 # straight and if there is we can stroe the highest index
-                #print('case Straight Flush  solved')
+                print('case Straight Flush solved')
                 # first find the cards that make the flushes 
                 tocompare = [0 for _ in range(len(fullHand))] # the list that will hold the highest flush for all hands 
                 for hand in range(len(fullHand)): # this loop is finding what cards in a hand are actually the ones that make the flush
@@ -657,12 +669,14 @@ class Deck():
                         for value in rankcount.values():
                             straightlist.append(value)
                         straightlist.reverse()
-                        for cardSpot in range(len(straightlist)):
+                        for cardSpot in range(len(straightlist)-5):
                             if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5)):
                                 # we found a straight flush 
                                 # we can actually jut save the highest card rank in the straight flush 
                                 topcard.append(cardSpot)
                                 break
+                    if len(topcard)<1:
+                        topcard.append(99999)
                     tocompare[hand] = min(topcard)
                 if tocompare[0] == tocompare[-1]:
                     return hands
@@ -681,7 +695,7 @@ if __name__ == '__main__':
     while True:
         # getting user input
         try:
-            numboards = int(input('How many boards should be played: 1, 2, or None (0)? '))
+            numboards = int(input('How many boards should be played? '))
         except:
             print("must input a number")
             continue
@@ -701,9 +715,13 @@ if __name__ == '__main__':
         else:
             print('There are now enough cards in a single deck for that to work enter different numbers.')
 
+    # we get funky percent values if we deal multiple boards 
+    # how can i fix that?
     tothanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                 , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
     winninghanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
+                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
+    percentdict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                     , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
     
     for i in range(10000):
@@ -711,7 +729,6 @@ if __name__ == '__main__':
         org = Deck()
         org.shuffle()
         org.deal(numplayers,numcards,numboards)
-
         org.calcHandRanks()
         org.calcWinner()
 
@@ -721,11 +738,11 @@ if __name__ == '__main__':
                 tothanddict[rank]+=1
         numrounds +=1
         numhands += len(org.playerHands)
+
         for level in org.winningLevel:
             winninghanddict[level]+=1
 
-    percentdict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
-                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
+    
     for key in percentdict.keys():
         try:
             percentdict[key] = (winninghanddict[key]/tothanddict[key])*100
@@ -733,10 +750,12 @@ if __name__ == '__main__':
             print(f"Hand type -{key}- did not occur.")
 
      # if we want to see some stats on the hands 
-    print(f'Total number of each type of hand\n {tothanddict}')
-    print(f'Number of times each type of hand won a round\n {winninghanddict}')
-    #print(f'Total number of hands {sum(tothanddict.values())}')
-    #print(f'Total number of winning hands {sum(winninghanddict.values())}')
-    print(f'The percent of a time a hand is the sole winning hand')
+    print(f'Total number of each type of hand\n{tothanddict}')
+    print(f'Number of times each type of hand won a round\n{winninghanddict}')
+    print(f'Total number of hands {sum(tothanddict.values())}')
+    print(f'Total number of winning hands {sum(winninghanddict.values())}')
+    print(f'The percent of a that the hand being this rank alone is enough to win.')
+    toprint = ''
     for key, value in percentdict.items():
-        print(f'{key}: {value:.3f}')
+        toprint += (f'{key}: {value:.3f} ')
+    print(toprint)
