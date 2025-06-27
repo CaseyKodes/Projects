@@ -11,18 +11,22 @@
     # we can calculate the rank of each players hand 
     # break ties between players if they have te same hand rank
     # deal any number of boards 
+    # have dead cards
+
 # currently we can NOT
     # 
+
 # next step
-    # impliment dead and wild cards
-        # for dead we just need to make a dead card list and if the card we are looking at is in that list we do not count it for anything
-        # for wild we count it as every suit but also need to consider it as every rank, this gets tricky since if we just add 1 to every rank 
-        # for every wild card this program will always think a person has a stright even if they have less than 5 cards 
+    # impliment wild cards
+        # originally thought wild cards would just be considered as every rank and every suit
+        # the suit part works in theory i think 
+        # but the rank part would make the code think a player with even a single wild card have the nut straight
+        # wilds are weird since they need to be able to be the top end of straights but also need to be able to go in gaps
 
 import random as r
 
 class Rankings(): # basically just a place to hold these arrays which tell us the ordering of hands 
-    HandValueOrder = ['High Card', 'Pair', 'Two Pair', 'Three of a kind', 'Straight', 'Flush', 'Full House', 'Four of a kind', 'Straight Flush']
+    HandValueOrder = ['High Card', 'Pair', 'Two Pair', 'Three of a kind', 'Straight', 'Flush', 'Full House', 'Four of a kind', 'Straight Flush', 'Five of a kind']
     CardValueOrder = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
     def getCrank():
         return Rankings.CardValueOrder
@@ -72,6 +76,7 @@ class Card():
 class Hand():
     # hand objects contain a list of card objects
     # they also have a rank that depends on the cards in a players hand and the cards on the board 
+    # rank is a list to accomodate having multiple baords 
     # we can add and remove cards from a hand, clear a hand, get and set the rank of a hand
     def __init__(self, cards, numboards):
         self.cards = list()
@@ -90,8 +95,6 @@ class Hand():
     def clearHand(self):
         self.cards.clear()
 
-    # think these two might have to change to accomodate multiple boards 
-    # added the index part
     def setRank(self, rank, index):
         self.rank[index] = rank
     def getRank(self, index):
@@ -108,10 +111,12 @@ class Hand():
 class Deck():
     # deck objects contain 52 cards, 4 suits, an 13, values
     # it contains lists of hands that players has
-    # it keeps track of the current deck after being dealt and we can save what cards are burnt but there is no use for those yet
-    # we have funcitons to deal hands to players, deal a board of shared cards, shuffle the deck, and calculate the rank of each hand
+    # it keeps track of the current deck after being dealt and we can save what 
+    # cards are burnt but there is no use for those yet
+    # we have funcitons to deal hands to players, deal a board of shared cards, 
+    # shuffle the deck ( in two different ways ), and calculate the rank of each hand
 
-    def __init__(self, wild, dead): # creates a deck of 52 cards, 13 ranks and 4 suits
+    def __init__(self, wild=[], dead=[], numdecks=1): # creates a deck of 52 cards, 13 ranks and 4 suits
         self.deck = list()
         self.playerHands = list()
         self.boardList = []
@@ -126,9 +131,10 @@ class Deck():
 
         suits = ['Spades', 'Hearts', 'Clubs', 'Diamonds']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
-        for suit in suits:
-            for value in values:
-                self.deck.append(Card(value, suit))
+        for deck in range(numdecks):
+            for suit in suits:
+                for value in values:
+                    self.deck.append(Card(value, suit))
 
     def __str__(self):
         toprint = ''
@@ -210,12 +216,8 @@ class Deck():
         
     def calcHandRanks(self): # figure out which hand has the best hand 
         # need to look at each hand in player hands and every card on the board
-
-        # make a dicr that has all the players hand types originally set to high 
         # card then we will update their hand type if they make a better hand
-        # since it is possible we did multiple baords we need to check if we did 1 or two 
-        # if we did 1 nothing changes 
-        # if we did 2 we have to calculate the hands on each board 
+        # since it is possible we did multiple baords we add a rank for each board to each hand
         for hand in self.playerHands:
             board=0
             for rank in hand.getRanks():
@@ -246,7 +248,7 @@ class Deck():
                         straightlist.append(rankcount['Ace'])
                         for value in rankcount.values():
                             straightlist.append(value)
-                        straightLenghth = 5 # x = length of straight
+                        straightLenghth = 5 # length of straight
                         for starter in range(len(straightlist)-straightLenghth):
                             if all(straightlist[starter:starter+straightLenghth]):
                                 if self.hr.index(hand.getRank(board)) < self.hr.index('Straight Flush'):
@@ -281,7 +283,11 @@ class Deck():
 
                 # determining based off the number of instances of that card value what type of hand a player has
                 # this is for pairs two pairs three of a kind full house and four of a kind
-                if any(x==4 for x in rankcount.values()):
+                if any(x>=5 for x in rankcount.values()):
+                    # this is the 5 of a kind case 
+                    if self.hr.index(hand.getRank(board)) < self.hr.index('Five of a kind'):
+                        hand.setRank('Five of a kind', board)
+                elif any(x==4 for x in rankcount.values()):
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Four of a kind'):
                         hand.setRank('Four of a kind', board)
                 elif any(x==3 for x in rankcount.values()) and any(y==2 for y in rankcount.values()):
@@ -783,7 +789,31 @@ class Deck():
                 elif tocompare[0] > tocompare[-1]:
                     while len(hands)>1:
                         hands.pop(0)
+                    return hands
                 pass
+            case 'Five of a kind':
+                #print('case Five of a kind')
+                # we just need to check the value of the five of a kind
+                # logic for this one is very straight foward
+                for cardSpot1 in range(len(fullHand[0])-4):
+                    if (fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] 
+                        and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2]
+                        and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+3] 
+                        and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+4]):
+                        for cardSpot2 in range(len(fullHand[-1])-3):
+                            if (fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+1] 
+                                and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+2]
+                                and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+3] 
+                                and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+4]):
+                                if (fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]):
+                                    return hands
+                                elif (fullHand[0][cardSpot1] < fullHand[-1][cardSpot2]):
+                                    while len(hands)>1:
+                                        hands.pop(0)
+                                    return hands
+                                elif (fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]):
+                                    hands.pop(-1)
+                                    return hands
         return hands
 
 def handelInput(L): # just makes sure all the values in the list are actual card values
@@ -806,25 +836,30 @@ def handelInput(L): # just makes sure all the values in the list are actual card
             case _: changed.append(value); pass # default case 
     return changed 
 
-if __name__ == '__main__':
+def game():
     numhands = 0
     numrounds = 0
     while True:
         # getting user input
+        try: 
+            numdecks = int(input("How many decks are we playing with? "))
+        except:
+            print("Must input a number")
+            continue
         try:
             numboards = int(input('How many boards should be played? '))
         except:
-            print("must input a number")
+            print("Must input a number")
             continue
         try:
             numplayers = int(input('How many players should there be? '))
         except:
-            print("must input a number")
+            print("Must input a number")
             continue
         try:
             numcards = int(input('How many cards should each player get? '))
         except:
-            print("must input a number")
+            print("Must input a number")
             continue
 
         try:
@@ -852,20 +887,20 @@ if __name__ == '__main__':
             print("Inproper input for wild cards.")
             continue
 
-        if (numplayers*numcards + 8*numboards<= 52):
+        if (numplayers*numcards + 8*numboards<= 52*numdecks):
             break
         else:
-            print('There are now enough cards in a single deck for that to work enter different numbers.')
+            print(f'There are now enough cards in {numdecks} deck for that to work enter different numbers.')
 
     tothanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
-                , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
+                , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
     winninghanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
-                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
+                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
     percentdict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
-                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
-    for i in range(100000):
+                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
+    for i in range(5):
         # simulating a round of poker
-        org = Deck(wild, dead)
+        org = Deck(wild, dead, numdecks)
         org.shuffle()
         org.deal(numplayers,numcards,numboards)
         org.calcHandRanks()
@@ -881,11 +916,10 @@ if __name__ == '__main__':
         for level in org.winningLevel:
             winninghanddict[level]+=1
 
-        #print(f'Round {i}')
-        #for hand in org.playerHands:
-        #    print('Hand: ')
-        #    print(hand)
-        #print(org.winnerstr)
+        print(f'Round {i}')
+        for hand in org.playerHands:
+            print(hand)
+        print(org.winnerstr)
 
     for key in percentdict.keys():
         try:
@@ -903,3 +937,5 @@ if __name__ == '__main__':
     for key, value in percentdict.items():
         toprint += (f'{key}: {value:.3f} ')
     print(toprint)
+
+game()
