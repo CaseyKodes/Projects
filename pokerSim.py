@@ -172,7 +172,6 @@ class Deck():
             for i in range(numboards):
                 self.dealSingleBoard()
                 
-
     def dealSingleBoard(self): # deals a flop turn and river
         # want to figure out how to deal 2 boards 
         # we would need to store them in different places 
@@ -293,11 +292,11 @@ class Deck():
                 board+=1  
             
     def calcWinner(self): # from the player hand ranks find which is the best
-        winnerslevel = ''
-        winnershand = []
         toreturn = ''
         loopover = max(1, len(self.boardList))
         for boardIndex in range(loopover):
+            winnershand = []
+            winnerslevel = ''
             for playersHand in self.playerHands:
                 if len(winnerslevel)==0:
                     winnerslevel=(playersHand.getRank(boardIndex))
@@ -316,17 +315,20 @@ class Deck():
                     elif (self.hr.index(playersHand.getRank(boardIndex)) 
                         == self.hr.index(winnerslevel)):
                         # we have equal rank hands
-                            # instead of just keping them both in the winners list do I 
-                            # want to figure out who actually wins it right here?
-                        # have both included anyway so then we can just deal with these two hands at a time
+                        # we  then need to call the tiebreak function 
                         winnershand.append(playersHand)
                         winnershand = self.tiebreak(winnershand, winnerslevel, boardIndex)
-            toreturn = f'\nWinning hand rank on Board number {boardIndex} was {winnerslevel} with a hand of: \n'
+            toreturn += f'Winning hand rank on Board number {boardIndex+1} was {winnerslevel} with a board of: \n'
+            for b in self.boardList[boardIndex]:
+                for card in b:
+                    toreturn += card.getStr()
+            toreturn += '\nAnd a hand of: \n'
             for hand in winnershand:
                 for card in hand.getCards():
                     toreturn += card.getStr()
                 if len(winnershand) > 1 and not hand == winnershand[-1]:
                     toreturn += '\nand '
+            toreturn += '\n'*2
             self.winningLevel.append(winnerslevel)
         self.winnerstr=toreturn
         
@@ -609,7 +611,7 @@ class Deck():
                     else: continue
                 pass
             case 'Four of a kind':
-                print('case Four of a kind solved')
+                #print('case Four of a kind solved')
                 # similar to both pair and 3 of a kind we just compare to 1 more card
                 for cardSpot1 in range(len(fullHand[0])-3):
                     if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+3]:
@@ -646,7 +648,7 @@ class Deck():
                 # suits we will know they are in order
                 # then for each suit we can do the thing we are doing in straights to see if there is a 
                 # straight and if there is we can stroe the highest index
-                print('case Straight Flush solved')
+                #print('case Straight Flush solved')
                 # first find the cards that make the flushes 
                 tocompare = [0 for _ in range(len(fullHand))] # the list that will hold the highest flush for all hands 
                 for hand in range(len(fullHand)): # this loop is finding what cards in a hand are actually the ones that make the flush
@@ -715,8 +717,7 @@ if __name__ == '__main__':
         else:
             print('There are now enough cards in a single deck for that to work enter different numbers.')
 
-    # we get funky percent values if we deal multiple boards 
-    # how can i fix that?
+
     tothanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                 , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
     winninghanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
@@ -724,7 +725,7 @@ if __name__ == '__main__':
     percentdict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                     , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
     
-    for i in range(10000):
+    for i in range(100000):
         # simulating a round of poker
         org = Deck()
         org.shuffle()
@@ -742,18 +743,23 @@ if __name__ == '__main__':
         for level in org.winningLevel:
             winninghanddict[level]+=1
 
-    
+        #print(f'Round {i}')
+        #for hand in org.playerHands:
+        #    print('Hand: ')
+        #    print(hand)
+        #print(org.winnerstr)
+
     for key in percentdict.keys():
         try:
             percentdict[key] = (winninghanddict[key]/tothanddict[key])*100
         except ZeroDivisionError:
             print(f"Hand type -{key}- did not occur.")
 
-     # if we want to see some stats on the hands 
+    # if we want to see some stats on the hands 
+    #print(f'Total number of hands {sum(tothanddict.values())}')
+    #print(f'Total number of winning hands {sum(winninghanddict.values())}')
     print(f'Total number of each type of hand\n{tothanddict}')
     print(f'Number of times each type of hand won a round\n{winninghanddict}')
-    print(f'Total number of hands {sum(tothanddict.values())}')
-    print(f'Total number of winning hands {sum(winninghanddict.values())}')
     print(f'The percent of a that the hand being this rank alone is enough to win.')
     toprint = ''
     for key, value in percentdict.items():
