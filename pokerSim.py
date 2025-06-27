@@ -111,7 +111,7 @@ class Deck():
     # it keeps track of the current deck after being dealt and we can save what cards are burnt but there is no use for those yet
     # we have funcitons to deal hands to players, deal a board of shared cards, shuffle the deck, and calculate the rank of each hand
 
-    def __init__(self): # creates a deck of 52 cards, 13 ranks and 4 suits
+    def __init__(self, wild, dead): # creates a deck of 52 cards, 13 ranks and 4 suits
         self.deck = list()
         self.playerHands = list()
         self.boardList = []
@@ -121,6 +121,8 @@ class Deck():
         self.hr = Rankings.getHrank()
         self.cr = Rankings.getCrank()
         self.numBorads = int()
+        self.dead = dead
+        self.wild = wild
 
         suits = ['Spades', 'Hearts', 'Clubs', 'Diamonds']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
@@ -221,10 +223,14 @@ class Deck():
                 # instead of just adding to something telling us if we have the suits lets move the cards to be sorted by suit
                 suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
                 for card in hand.getCards():
+                    if card.getVal() in self.dead:
+                        continue
                     suitcount[card.getSuit()].append(card)
                 if len(self.boardList) > 0:
                     for b in self.boardList[board]:
                         for card in b:
+                            if card.getVal() in self.dead:
+                                continue
                             suitcount[card.getSuit()].append(card)
                 if any(len(x) > 4 for x in suitcount.values()):
                     # if we are here we know we have a flush now we want to check if those cards are in order 
@@ -233,6 +239,8 @@ class Deck():
                         rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
                          '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                         for card in value:
+                            if card.getVal() in self.dead:
+                                continue
                             rankcount[card.getVal()]+=1
                         straightlist = []
                         straightlist.append(rankcount['Ace'])
@@ -252,8 +260,12 @@ class Deck():
                 if len(self.boardList) > 0:
                     for b in self.boardList[board]:
                         for card in b:
+                            if card.getVal() in self.dead:
+                                continue
                             rankcount[card.getVal()] += 1
                 for card in hand.getCards():
+                    if card.getVal() in self.dead:
+                        continue
                     rankcount[card.getVal()]+=1
 
                 # find straights
@@ -292,7 +304,7 @@ class Deck():
                 board+=1  
             
     def calcWinner(self): # from the player hand ranks find which is the best
-        toreturn = ''
+        toreturn = f'Dead cards were {self.dead} \nWild cards were {self.wild}\n'
         loopover = max(1, len(self.boardList))
         for boardIndex in range(loopover):
             winnershand = []
@@ -319,9 +331,10 @@ class Deck():
                         winnershand.append(playersHand)
                         winnershand = self.tiebreak(winnershand, winnerslevel, boardIndex)
             toreturn += f'Winning hand rank on Board number {boardIndex+1} was {winnerslevel} with a board of: \n'
-            for b in self.boardList[boardIndex]:
-                for card in b:
-                    toreturn += card.getStr()
+            if len(self.boardList)>0:
+                for b in self.boardList[boardIndex]:
+                    for card in b:
+                        toreturn += card.getStr()
             toreturn += '\nAnd a hand of: \n'
             for hand in winnershand:
                 for card in hand.getCards():
@@ -340,8 +353,12 @@ class Deck():
             if len(self.boardList)>0:
                 for b in self.boardList[boardIndex]:
                     for card in b:
+                        if card.getVal() in self.dead:
+                            continue
                         new.append(card)
             for card in hands[hand].getCards():
+                if card.getVal() in self.dead:
+                    continue
                 new.append(card)
             fullHand[hand] = new
 
@@ -351,12 +368,15 @@ class Deck():
         
         # seting how many cards make up a full hand if we have over 5+ cards we only 
         # look at 5 but if we have less than 5 we look at all of them
-        if len(fullHand[0])>5:
+        checkmax = bool()
+        if len(fullHand[0])>4 and len(fullHand[-1])>4:
             top = 5
+            checkmax = True
         else:
-            top = len(fullHand[0])
+            top = min(len(fullHand[0]), len(fullHand[-1])) 
+            # we set the top to the minimum amount of cards then we know that if we check the min amount of cards in both we can say the one that has more cards wins
         
-        # cases 1 for each hand type assuming we are only using a 52 card deck with no wild cards
+        # one case for each hand type
         match level:
             case 'High Card':
                 #print('case High Card solved')  
@@ -368,6 +388,22 @@ class Deck():
                         return hands
                     elif fullHand[0][i] < fullHand[-1][i]:
                         while len(hands) > 1:
+                            hands.pop(0)
+                        return hands
+                # we have checked all cards in range top
+                # check if both hands have lengths above 5
+                if (checkmax):
+                    pass
+                elif (len(fullHand[0])==len(fullHand[-1])):
+                    pass
+                else:
+                    # pop the hand with less cards 
+                    # since we know we do not have the same amount of cards in both 
+                    if len(fullHand[0]) > len(fullHand[-1]):
+                        hands.pop(-1)
+                        return hands
+                    else:
+                        while len(hands)>1:
                             hands.pop(0)
                         return hands
                 pass
@@ -385,14 +421,32 @@ class Deck():
                                 if fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]:
                                     # here we now need to check their highest cards against each other
                                         # i just coppied the code from high card can we make that better somehow
-                                    for i in range(0, top):
-                                        if fullHand[0][i] == fullHand[-1][i]:
+                                    newcheck1 = [item for item in fullHand[0] if item!=fullHand[0][cardSpot1]]
+                                    newcheck2 = [item for item in fullHand[-1] if item!=fullHand[-1][cardSpot2]]
+                                    for i in range(min(len(newcheck1), len(newcheck2))):
+                                        if newcheck1[i] == newcheck2[i]:
                                             continue
-                                        elif fullHand[0][i] > fullHand[-1][i]:
+                                        elif newcheck1[i] > newcheck2[i]:
                                             hands.pop(-1)
                                             return hands
-                                        elif fullHand[0][i] < fullHand[-1][i]:
+                                        elif newcheck1[i] < newcheck2[i]:
                                             while len(hands) > 1:
+                                                hands.pop(0)
+                                            return hands
+                                    # we have checked all cards in range top
+                                    # check if both hands have lengths above 5
+                                    if (checkmax):
+                                        pass
+                                    elif (len(fullHand[0])==len(fullHand[-1])):
+                                        pass
+                                    else:
+                                        # pop the hand with less cards 
+                                        # since we know we do not have the same amount of cards in both 
+                                        if len(fullHand[0]) > len(fullHand[-1]):
+                                            hands.pop(-1)
+                                            return hands
+                                        else:
+                                            while len(hands)>1:
                                                 hands.pop(0)
                                             return hands
                                 elif fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]:
@@ -431,8 +485,17 @@ class Deck():
                                                         # sorted in reverse order 
                                                         tocheck1 = [item for item in smaller1 if item != smaller1[secondCheck1]]
                                                         tocheck2 = [item for item in smaller2 if item != smaller2[secondCheck2]]
-                                                        tocheck1.sort(reverse=True)
-                                                        tocheck2.sort(reverse=True)
+                                                        if(len(tocheck1)>0 and len(tocheck2)>0):
+                                                            pass
+                                                        else:
+                                                            # we know that one of the hands has no more cards remove that hand
+                                                            if len(tocheck1)==0:
+                                                                while len(hands)>1:
+                                                                    hands.pop(0)
+                                                                return hands
+                                                            else:
+                                                                hands.pop(-1)
+                                                                return hands
                                                         if tocheck1[0] == tocheck2[0]:
                                                             #print('highest card outside of pair is the same')
                                                             return hands
@@ -474,16 +537,35 @@ class Deck():
                                 if fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]:
                                     # here we now need to check their highest cards against each other
                                         # i just coppied the code from high card can we make that better somehow
-                                    for i in range(0, top):
-                                        if fullHand[0][i] == fullHand[-1][i]:
+                                    smaller1 = [item for item in fullHand[0] if item!=fullHand[0][cardSpot1]]
+                                    smaller2 = [item for item in fullHand[-1] if item!=fullHand[-1][cardSpot2]]
+                                    for i in range(min(len(smaller1), len(smaller2))):
+                                        if smaller1[i] == smaller2[i]:
                                             continue
-                                        elif fullHand[0][i] > fullHand[-1][i]:
+                                        elif smaller1[i] > smaller2[i]:
                                             hands.pop(-1)
                                             return hands
-                                        elif fullHand[0][i] < fullHand[-1][i]:
+                                        elif smaller1[i] < smaller2[i]:
                                             while len(hands) > 1:
                                                 hands.pop(0)
                                             return hands
+                                    # we have checked all cards in range top
+                                    # check if both hands have lengths above 5
+                                    if (checkmax):
+                                        pass
+                                    elif (len(fullHand[0])==len(fullHand[-1])):
+                                        pass
+                                    else:
+                                        # pop the hand with less cards 
+                                        # since we know we do not have the same amount of cards in both 
+                                        if len(fullHand[0]) > len(fullHand[-1]):
+                                            hands.pop(-1)
+                                            return hands
+                                        else:
+                                            while len(hands)>1:
+                                                hands.pop(0)
+                                            return hands
+                                    
                                 elif fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]:
                                     hands.pop(-1)
                                     return hands
@@ -621,16 +703,29 @@ class Deck():
                                 if fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]:
                                     # here we now need to check their highest cards against each other
                                         # i just coppied the code from high card can we make that better somehow
-                                    for i in range(0, top):
-                                        if fullHand[0][i] == fullHand[-1][i]:
-                                            continue
-                                        elif fullHand[0][i] > fullHand[-1][i]:
-                                            hands.pop(-1)
-                                            return hands
-                                        elif fullHand[0][i] < fullHand[-1][i]:
-                                            while len(hands) > 1:
+                                    smaller1 = [item for item in fullHand[0] if item != fullHand[0][cardSpot1]]
+                                    smaller2 = [item for item in fullHand[-1] if item != fullHand[-1][cardSpot2]]
+                                    if(len(smaller1)>0 and len(smaller2)>0):
+                                        pass
+                                    else:
+                                        # we know that one of the hands has no more cards remove that hand
+                                        if len(smaller1)==0:
+                                            while len(hands)>1:
                                                 hands.pop(0)
                                             return hands
+                                        else:
+                                            hands.pop(-1)
+                                            return hands
+                                    if smaller1[0] == smaller2[0]:
+                                        #print('highest card outside of pair is the same')
+                                        return hands
+                                    elif smaller1[0] < smaller2[0]:
+                                        while len(hands)>1:
+                                            hands.pop(0)
+                                        return hands
+                                    elif smaller1[0] > smaller2[0]:
+                                        hands.pop(-1)
+                                        return hands
                                 elif fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]:
                                     hands.pop(-1)
                                     return hands
@@ -691,6 +786,26 @@ class Deck():
                 pass
         return hands
 
+def handelInput(L): # just makes sure all the values in the list are actual card values
+    changed = []
+    for value in L:
+        match value:
+            case 'two': changed.append('2'); pass
+            case 'three':changed.append('3'); pass
+            case 'four':changed.append('4'); pass
+            case 'five':changed.append('5'); pass
+            case 'six':changed.append('6'); pass
+            case 'seven':changed.append('7'); pass
+            case 'eight':changed.append('8'); pass
+            case 'nine':changed.append('9'); pass
+            case 'ten':changed.append('10'); pass
+            case 'jack':changed.append('Jack'); pass
+            case 'queen':changed.append('Queen'); pass
+            case 'king':changed.append('King'); pass
+            case 'ace':changed.append('Ace'); pass
+            case _: changed.append(value); pass # default case 
+    return changed 
+
 if __name__ == '__main__':
     numhands = 0
     numrounds = 0
@@ -712,11 +827,35 @@ if __name__ == '__main__':
             print("must input a number")
             continue
 
+        try:
+            dead = input('Are there any dead cards? Seperate the values with spaces. ')
+            if len(dead)>0:
+                dead = dead.split(' ')
+                dead = [item.lower() for item in dead]
+                dead = handelInput(dead)
+                for i in range(len(dead)):
+                    if (dead[i] not in Rankings.getCrank()):
+                        raise KeyError
+        except:
+            print("Inproper input for dead cards.")
+            continue
+        try:
+            wild = input('Are there any wild cards? Seperate the values with spaces. ')
+            if len(wild):
+                wild = wild.split(' ')
+                wild = [item.lower() for item in wild]
+                wild = handelInput(wild)
+                for i in range(len(wild)):
+                    if (wild[i] not in Rankings.getCrank()):
+                        raise KeyError
+        except:
+            print("Inproper input for wild cards.")
+            continue
+
         if (numplayers*numcards + 8*numboards<= 52):
             break
         else:
             print('There are now enough cards in a single deck for that to work enter different numbers.')
-
 
     tothanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                 , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
@@ -724,10 +863,9 @@ if __name__ == '__main__':
                     , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
     percentdict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                     , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0}
-    
     for i in range(100000):
         # simulating a round of poker
-        org = Deck()
+        org = Deck(wild, dead)
         org.shuffle()
         org.deal(numplayers,numcards,numboards)
         org.calcHandRanks()
