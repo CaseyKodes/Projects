@@ -369,6 +369,19 @@ class Deck():
                 new.append(card)
             fullHand[hand] = new
 
+        #getting the exact number of each rank card in the first and last hand
+        # this is the most helpful for hands that need 5 cards it does not do much use otherwise but still worth keeping
+        ranknums = [{'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0},
+                    {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}]
+        for card in fullHand[0]:
+            ranknums[0][card.getVal()]+=1
+        for card in fullHand[-1]:
+            ranknums[-1][card.getVal()]+=1 
+        counts1 = [value for value in ranknums[0].values()]
+        counts2 = [value for value in ranknums[-1].values()] 
+        counts1.reverse()
+        counts2.reverse()
+
         # sort that each list of cards in each hand so we can compare the lists easily
         for hand in fullHand:
             hand.sort(reverse=True)
@@ -386,33 +399,25 @@ class Deck():
         # one case for each hand type
         match level:
             case 'High Card':
-                #print('case High Card solved')  
-                for i in range(0, top):
-                    if fullHand[0][i] == fullHand[-1][i]:
-                        continue
-                    elif fullHand[0][i] > fullHand[-1][i]:
-                        hands.pop(-1)
-                        return hands
-                    elif fullHand[0][i] < fullHand[-1][i]:
-                        while len(hands) > 1:
-                            hands.pop(0)
-                        return hands
-                # we have checked all cards in range top
-                # check if both hands have lengths above 5
-                if (checkmax):
-                    pass
-                elif (len(fullHand[0])==len(fullHand[-1])):
-                    pass
-                else:
-                    # pop the hand with less cards 
-                    # since we know we do not have the same amount of cards in both 
-                    if len(fullHand[0]) > len(fullHand[-1]):
-                        hands.pop(-1)
-                        return hands
-                    else:
-                        while len(hands)>1:
-                            hands.pop(0)
-                        return hands
+                #print('case High Card solved') 
+                ties = 0
+                for highspot1 in range(len(counts1)):
+                    if counts1[highspot1]!=0:
+                        for highspot2 in range(len(counts2)):
+                            if counts2[highspot2]!=0:
+                                if highspot1==highspot2:
+                                    # come back to this case since we need to keep track 
+                                    # that we have looked at another high card
+                                    ties+=1
+                                    if ties==5:
+                                        return hands
+                                    continue
+                                elif highspot1>highspot2:
+                                    while len(hands)>1:
+                                        hands.pop(0)
+                                elif highspot1<highspot2:
+                                    hands.pop(-1)
+                                    return hands
                 pass
             case 'Pair':
                 #print('case Pair solved')
@@ -420,168 +425,127 @@ class Deck():
                     # this works if one player wins directly from the pair they have
                     # but if players have the same pair we then need to check their highest cards that are not paired
                     # also need to keep in mind that we only want to check 5 cards max
-                for cardSpot1 in range(len(fullHand[0])-1):
-                    if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1]:
-                        for cardSpot2 in range(len(fullHand[-1])-1):
-                            if fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+1]:
-                                # now we compare the pairs 
-                                if fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]:
-                                    # here we now need to check their highest cards against each other
-                                        # i just coppied the code from high card can we make that better somehow
-                                    newcheck1 = [item for item in fullHand[0] if item!=fullHand[0][cardSpot1]]
-                                    newcheck2 = [item for item in fullHand[-1] if item!=fullHand[-1][cardSpot2]]
-                                    for i in range(min(len(newcheck1), len(newcheck2))):
-                                        if newcheck1[i] == newcheck2[i]:
-                                            continue
-                                        elif newcheck1[i] > newcheck2[i]:
-                                            hands.pop(-1)
-                                            return hands
-                                        elif newcheck1[i] < newcheck2[i]:
-                                            while len(hands) > 1:
-                                                hands.pop(0)
-                                            return hands
-                                    # we have checked all cards in range top
-                                    # check if both hands have lengths above 5
-                                    if (checkmax):
-                                        pass
-                                    elif (len(fullHand[0])==len(fullHand[-1])):
-                                        pass
-                                    else:
-                                        # pop the hand with less cards 
-                                        # since we know we do not have the same amount of cards in both 
-                                        if len(fullHand[0]) > len(fullHand[-1]):
-                                            hands.pop(-1)
-                                            return hands
-                                        else:
-                                            while len(hands)>1:
-                                                hands.pop(0)
-                                            return hands
-                                elif fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]:
-                                    hands.pop(-1)
-                                    return hands
-                                elif fullHand[0][cardSpot1] < fullHand[-1][cardSpot2]:
-                                    while len(hands) > 1:
+                # what would this look like with the logic from full house
+                # we now need to keep track of how many cards we check we only want to chec k5 cards max so we need to keep track
+                # of how many high cards we look at after the pair
+                ties = 0 # number that stops us from checking more than 5 cards 
+                for spot1 in range(len(counts1)):
+                    if counts1[spot1] == 2:
+                        for spot2 in range(len(counts2)):
+                            if counts2[spot2] == 2:
+                                if spot1==spot2:
+                                    # now we look for the highest card 
+                                    counts1.pop(spot1)
+                                    counts2.pop(spot2)
+                                    for highspot1 in range(len(counts1)):
+                                        if counts1[highspot1]!=0:
+                                            for highspot2 in range(len(counts2)):
+                                                if counts2[highspot2]!=0:
+                                                    if highspot1==highspot2:
+                                                        # come back to this case since we need to keep track 
+                                                        # that we have looked at another high card
+                                                        ties+=1
+                                                        if ties==3:
+                                                            return hands
+                                                        continue
+                                                    elif highspot1>highspot2:
+                                                        while len(hands)>1:
+                                                            hands.pop(0)
+                                                        return hands
+                                                    elif highspot1<highspot2:
+                                                        hands.pop(-1)
+                                                        return hands
+                                elif spot1>spot2:
+                                    while len(hands)>1:
                                         hands.pop(0)
                                     return hands
-                            else: continue
-                    else: continue
+                                elif spot1<spot2:
+                                    hands.pop(-1)
+                                    return hands
                 pass
             case 'Two Pair':
                 #print('case Two Pair solved')
                 # can use similar logic here as for the full house case
-                for cardSpot1 in range(len(fullHand[0])-1):
-                    if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1]:
-                        for cardSpot2 in range(len(fullHand[-1])-1):
-                            if fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+1]:
-                                if fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]: 
-                                    #print('top pairs are the same')
-                                    # since the higher pair is the same we need to check the lower pair
-                                    # insetad of making things not to check make a new smaller list for each
-                                    smaller1 = [item for item in fullHand[0] if item != fullHand[0][cardSpot1]]
-                                    smaller2 = [item for item in fullHand[-1] if item != fullHand[-1][cardSpot2]]
-                                    for secondCheck1 in range(len(smaller1)-1):
-                                        if smaller1[secondCheck1] == smaller1[secondCheck1+1]:
-                                            for secondCheck2 in range(len(smaller2)-1):
-                                                if smaller2[secondCheck2] == smaller2[secondCheck2+1]:
-                                                    # now we can actually compare
-                                                    if smaller1[secondCheck1] == smaller2[secondCheck2]:
-                                                        #print('bottom pairs are the same')
-                                                        # for two pair we actually do care about the fifth card
-                                                        # form all the avalible cards we want to remove ones that are paired
-                                                        # then look at the biggested card which should be the first since we 
-                                                        # sorted in reverse order 
-                                                        tocheck1 = [item for item in smaller1 if item != smaller1[secondCheck1]]
-                                                        tocheck2 = [item for item in smaller2 if item != smaller2[secondCheck2]]
-                                                        if(len(tocheck1)>0 and len(tocheck2)>0):
-                                                            pass
-                                                        else:
-                                                            # we know that one of the hands has no more cards remove that hand
-                                                            if len(tocheck1)==0:
-                                                                while len(hands)>1:
-                                                                    hands.pop(0)
-                                                                return hands
-                                                            else:
-                                                                hands.pop(-1)
-                                                                return hands
-                                                        if tocheck1[0] == tocheck2[0]:
-                                                            #print('highest card outside of pair is the same')
-                                                            return hands
-                                                        elif tocheck1[0] < tocheck2[0]:
-                                                            while len(hands)>1:
-                                                                hands.pop(0)
-                                                            return hands
-                                                        elif tocheck1[0] > tocheck2[0]:
-                                                            hands.pop(-1)
-                                                            return hands
-                                                    elif fullHand[0][secondCheck1] > fullHand[-1][secondCheck2]:
-                                                        hands.pop(-1)
-                                                        return hands
-                                                    elif fullHand[0][secondCheck1] < fullHand[-1][secondCheck2]:
-                                                        while len(hands) > 1:
+                for spot1 in range(len(counts1)):
+                    if counts1[spot1] == 2:
+                        for spot2 in range(len(counts2)):
+                            if counts2[spot2] == 2:
+                                if spot1==spot2:
+                                    counts1.pop(spot1)
+                                    counts2.pop(spot2)
+                                    for pairspot1 in range(len(counts1)):
+                                        if counts1[pairspot1]==2:
+                                            for pairspot2 in range(len(counts2)):
+                                                if counts2[pairspot2]==2:
+                                                    if pairspot1 == pairspot2:
+                                                        # need more since we need to look at the high card 
+                                                        counts1.pop(pairspot1)
+                                                        counts2.pop(pairspot2)
+                                                        for high1 in range(len(counts1)):
+                                                            if counts1[high1]!=0:
+                                                                for high2 in range(len(counts2)):
+                                                                    if counts2[high2]!=0:
+                                                                        if high1==high2:
+                                                                            return hands
+                                                                        elif high1>high2:
+                                                                            while len(hands)>1:
+                                                                                hands.pop(0)
+                                                                            return hands
+                                                                        elif high1<high2:
+                                                                            hands.pop(-1)
+                                                                            return hands
+                                                    elif pairspot1>pairspot2:
+                                                        while len(hands)>1:
                                                             hands.pop(0)
                                                         return hands
-                                                else: continue
-                                        else: continue
-                                    pass
-                                elif fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]:
-                                    hands.pop(-1)
-                                    return hands
-                                elif fullHand[0][cardSpot1] < fullHand[-1][cardSpot2]:
-                                    while len(hands) > 1:
+                                                    elif pairspot1<pairspot2:
+                                                        hands.pop(-1)
+                                                        return hands
+                                elif spot1>spot2:
+                                    while len(hands)>1:
                                         hands.pop(0)
                                     return hands
-                            else: continue
-                    else: continue
+                                elif spot1<spot2:
+                                    hands.pop(-1)
+                                    return hands
                 pass
             case 'Three of a kind':
                 #print('case Three of a kind solved')
                 # could be similary to pair except now we look at three at a time
-                for cardSpot1 in range(len(fullHand[0])-2):
-                    if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2]:
-                        for cardSpot2 in range(len(fullHand[-1])-2):
-                            if fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+1] and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+2]:
-                                # now we compare the pairs 
-                                if fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]:
-                                    # here we now need to check their highest cards against each other
-                                        # i just coppied the code from high card can we make that better somehow
-                                    smaller1 = [item for item in fullHand[0] if item!=fullHand[0][cardSpot1]]
-                                    smaller2 = [item for item in fullHand[-1] if item!=fullHand[-1][cardSpot2]]
-                                    for i in range(min(len(smaller1), len(smaller2))):
-                                        if smaller1[i] == smaller2[i]:
-                                            continue
-                                        elif smaller1[i] > smaller2[i]:
-                                            hands.pop(-1)
-                                            return hands
-                                        elif smaller1[i] < smaller2[i]:
-                                            while len(hands) > 1:
-                                                hands.pop(0)
-                                            return hands
-                                    # we have checked all cards in range top
-                                    # check if both hands have lengths above 5
-                                    if (checkmax):
-                                        pass
-                                    elif (len(fullHand[0])==len(fullHand[-1])):
-                                        pass
-                                    else:
-                                        # pop the hand with less cards 
-                                        # since we know we do not have the same amount of cards in both 
-                                        if len(fullHand[0]) > len(fullHand[-1]):
-                                            hands.pop(-1)
-                                            return hands
-                                        else:
-                                            while len(hands)>1:
-                                                hands.pop(0)
-                                            return hands
-                                    
-                                elif fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]:
-                                    hands.pop(-1)
-                                    return hands
-                                elif fullHand[0][cardSpot1] < fullHand[-1][cardSpot2]:
-                                    while len(hands) > 1:
+                ties = 0 # number that stops us from checking more than 5 cards 
+                for spot1 in range(len(counts1)):
+                    if counts1[spot1] == 3:
+                        for spot2 in range(len(counts2)):
+                            if counts2[spot2] == 3:
+                                if spot1==spot2:
+                                    # now we look for the highest card 
+                                    counts1.pop(spot1)
+                                    counts2.pop(spot2)
+                                    for highspot1 in range(len(counts1)):
+                                        if counts1[highspot1]!=0:
+                                            for highspot2 in range(len(counts2)):
+                                                if counts2[highspot2]!=0:
+                                                    if highspot1==highspot2:
+                                                        # come back to this case since we need to keep track 
+                                                        # that we have looked at another high card
+                                                        ties+=1
+                                                        if ties==2:
+                                                            return hands
+                                                        continue
+                                                    elif highspot1>highspot2:
+                                                        while len(hands)>1:
+                                                            hands.pop(0)
+                                                        return hands
+                                                    elif highspot1<highspot2:
+                                                        hands.pop(-1)
+                                                        return hands
+                                elif spot1>spot2:
+                                    while len(hands)>1:
                                         hands.pop(0)
                                     return hands
-                            else: continue
-                    else: continue
+                                elif spot1<spot2:
+                                    hands.pop(-1)
+                                    return hands
                 pass
             case 'Straight': 
                 # count up the cards again find where the strihgt starts and then store the top number
@@ -651,97 +615,71 @@ class Deck():
                             hands.pop(0)
                         return hands
                 pass
-            case 'Full House': # want to change this up to use the rank count array this would make the logic simplier
+            case 'Full House': 
                 #print('case Full House solved')
-                # can we use the same logic for three of a kind?
-                # sorta but if the three of a kinds are the same then we have to check the pairs
-                # so we can just use the code for 3 of a kind and then if those are the same use the code for pairs
-                # problem with just copy and pasting the pair code is that it might just look at the three of a kind since we are
-                # only looking at 2 so we also need to make sure the cards next to the 2 do not equal the 2
-                for cardSpot1 in range(len(fullHand[0])-2):
-                    if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2]:
-                        for cardSpot2 in range(len(fullHand[-1])-2):
-                            if fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+1] and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+2]:
-                                if fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]: 
-                                    # now we compare the pairs since the three of a kind parts were the same
-                                    # so now we know that the 3 of a kind on both hands are the same 
-                                    # we need to check which has a better pair 
-                                    # make a new list that does not contain the three of a kind part
-                                    smaller1 = [item for item in fullHand[0] if item != fullHand[0][cardSpot1]]
-                                    smaller2 = [item for item in fullHand[-1] if item != fullHand[-1][cardSpot2]]
-                                    for secondCheck1 in range(len(smaller1)-1):
-                                        if smaller1[secondCheck1] == smaller1[secondCheck1+1]:
-                                            for secondCheck2 in range(len(smaller2)-1):
-                                                if smaller2[secondCheck2] == smaller2[secondCheck2+1]:
-                                                    # now we can actually compare
-                                                    if smaller1[secondCheck1] == smaller2[secondCheck2]:
-                                                        # since we are looking at a full house which is a 5 card hand the high cards 
-                                                        # do not matter to the ranking of the hand so we will just move on here 
-                                                        # the players would chop
+                # find the highest 3 of a kind for each hand and compare them 
+                # if equal value compare highest paired card 
+                for spot1 in range(len(counts1)):
+                    if counts1[spot1] == 3:
+                        for spot2 in range(len(counts2)):
+                            if counts2[spot2] == 3:
+                                if spot1==spot2:
+                                    counts1.pop(spot1)
+                                    counts2.pop(spot2)
+                                    for pairspot1 in range(len(counts1)):
+                                        if counts1[pairspot1]>=2:
+                                            for pairspot2 in range(len(counts2)):
+                                                if counts2[pairspot2]>=2:
+                                                    if pairspot1 == pairspot2:
                                                         return hands
-                                                    elif smaller1[secondCheck1] > smaller2[secondCheck2]:
-                                                        hands.pop(-1)
-                                                        return hands
-                                                    elif smaller1[secondCheck1] < smaller2[secondCheck2]:
-                                                        while len(hands) > 1:
+                                                    elif pairspot1>pairspot2:
+                                                        while len(hands)>1:
                                                             hands.pop(0)
                                                         return hands
-                                                else: continue
-                                        else: continue
-                                    pass
-                                elif fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]:
-                                    hands.pop(-1)
-                                    return hands
-                                elif fullHand[0][cardSpot1] < fullHand[-1][cardSpot2]:
-                                    while len(hands) > 1:
+                                                    elif pairspot1<pairspot2:
+                                                        hands.pop(-1)
+                                                        return hands
+                                elif spot1>spot2:
+                                    while len(hands)>1:
                                         hands.pop(0)
                                     return hands
-                            else: continue
-                    else: continue
+                                elif spot1<spot2:
+                                    hands.pop(-1)
+                                    return hands
                 pass
             case 'Four of a kind':
                 #print('case Four of a kind solved')
                 # similar to both pair and 3 of a kind we just compare to 1 more card
-                for cardSpot1 in range(len(fullHand[0])-3):
-                    if fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2] and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+3]:
-                        for cardSpot2 in range(len(fullHand[-1])-3):
-                            if fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+1] and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+2] and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+3]:
-                                # now we compare the pairs 
-                                if fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]:
-                                    # here we now need to check their highest cards against each other
-                                        # i just coppied the code from high card can we make that better somehow
-                                    smaller1 = [item for item in fullHand[0] if item != fullHand[0][cardSpot1]]
-                                    smaller2 = [item for item in fullHand[-1] if item != fullHand[-1][cardSpot2]]
-                                    if(len(smaller1)>0 and len(smaller2)>0):
-                                        pass
-                                    else:
-                                        # we know that one of the hands has no more cards remove that hand
-                                        if len(smaller1)==0:
-                                            while len(hands)>1:
-                                                hands.pop(0)
-                                            return hands
-                                        else:
-                                            hands.pop(-1)
-                                            return hands
-                                    if smaller1[0] == smaller2[0]:
-                                        #print('highest card outside of pair is the same')
-                                        return hands
-                                    elif smaller1[0] < smaller2[0]:
-                                        while len(hands)>1:
-                                            hands.pop(0)
-                                        return hands
-                                    elif smaller1[0] > smaller2[0]:
-                                        hands.pop(-1)
-                                        return hands
-                                elif fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]:
-                                    hands.pop(-1)
-                                    return hands
-                                elif fullHand[0][cardSpot1] < fullHand[-1][cardSpot2]:
-                                    while len(hands) > 1:
+                for spot1 in range(len(counts1)):
+                    if counts1[spot1] == 4:
+                        for spot2 in range(len(counts2)):
+                            if counts2[spot2] == 4:
+                                if spot1==spot2:
+                                    # now we look for the highest card 
+                                    counts1.pop(spot1)
+                                    counts2.pop(spot2)
+                                    for highspot1 in range(len(counts1)):
+                                        if counts1[highspot1]!=0:
+                                            for highspot2 in range(len(counts2)):
+                                                if counts2[highspot2]!=0:
+                                                    if highspot1==highspot2:
+                                                        # for 4 of a kind only 1 card matters so 
+                                                        # if the high card matches we can return rieght away 
+                                                        return hands
+                                                    elif highspot1>highspot2:
+                                                        while len(hands)>1:
+                                                            hands.pop(0)
+                                                        return hands
+                                                    elif highspot1<highspot2:
+                                                        hands.pop(-1)
+                                                        return hands
+                                elif spot1>spot2:
+                                    while len(hands)>1:
                                         hands.pop(0)
                                     return hands
-                            else: continue
-                    else: continue
+                                elif spot1<spot2:
+                                    hands.pop(-1)
+                                    return hands
                 pass
             case 'Straight Flush':
                 # similar to straigth and flush but we need to do both 
@@ -793,18 +731,7 @@ class Deck():
                     return hands
                 pass
             case 'Five of a kind':
-                #print('case Five of a kind')
-                ranknums = [{'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0},
-                            {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}]
-                for card in fullHand[0]:
-                    ranknums[0][card.getVal()]+=1
-                for card in fullHand[-1]:
-                    ranknums[-1][card.getVal()]+=1  
-                print(ranknums)
-                counts1 = [value for value in ranknums[0].values()]
-                counts2 = [value for value in ranknums[-1].values()] 
-                counts1.reverse()
-                counts2.reverse()
+                #print('case Five of a kind') 
                 for spot1 in range(len(counts1)):
                     if counts1[spot1] == 5:
                         for spot2 in range(len(counts2)):
