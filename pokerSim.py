@@ -9,16 +9,27 @@
     # have dead cards
 
 # currently we can NOT
-    # use wild cards 
-        # wilds are weird since they need to be able to be the top end of straights 
-        # but also need to be able to go in gaps
-        # maybe we have a different function to evaluate the hands if they 
-        # have wild cards since there is going to be a decent amount of new logic
-        # the number of cards needed for each type of paired hand goes down by the number of wild cards they have
+'''
 
-# next step
-    # see if logic for paired hands can have less ifs
-    # by using the rank count array this could work well for 5 of a kind and full hosue it would save
+WILD CARD TROUBLES 
+if we use a new number to indicate how many wild cards a hand has but we still count the rank of those wild cards if we ever have 2 wild cards of the same rank the progrma will 
+always think we have 4 of a kind since it is counting the rank of the wild cards and saying we need the number of wild cards less in a specific rank to have that type of hand 
+then if we do not count the rank fewer straights will show up since we are removing an entire card rank from the ranks that can appear
+
+THINGS THAT ARE NICE TO KNOW ABOUT WILD CARDS 
+with wild cards if a hand has 1 they will never have 2 pair as their hand type becuase they could make a better hand by using thw wild cards in a different fashion
+
+
+HOW i THOUGHT TO DO IT BUT DID NOT WORK YET AND SO I REMOVED IT
+do not count the rank of wild cads just add to the numer of wild cards variable
+when figuring out what hand type a card has 
+    if a pair hand type - subtract the number of wild cards from the number of cards needed to make the hand 
+    for straights - they can be the top or bottm of a straight easy but subtracting the number of wild cards needed for a straight 
+                  - but to be the middle cards in a straight is weird
+    for flushes - subtract number of wild cards from how many cards are needed to make a straigth
+    for straight flushes - same logic as for a straight but just seperate into the suits first
+'''
+
 
 import random as r
 
@@ -80,10 +91,12 @@ class Hand():
         self.rank = ['High Card']*max(numboards, 1) # default lowest value of a hand
         for card in cards:
             self.cards.append(card)
+        self.cards.sort()
     def getCards(self):
         return self.cards
     def addCard(self, card):
         self.cards.append(card)
+        self.cards.sort()
     def removeCard(self, index):
         try:
             self.cards.pop(index)
@@ -342,10 +355,13 @@ class Deck():
                 for b in self.boardList[boardIndex]:
                     for card in b:
                         toreturn += card.getStr()
+                        if card != b[-1]: toreturn +='& '
             toreturn += '\nAnd a hand of: \n'
             for hand in winnershand:
                 for card in hand.getCards():
                     toreturn += card.getStr()
+                    if card != hand.getCards()[-1]:
+                        toreturn += '& '
                 if len(winnershand) > 1 and not hand == winnershand[-1]:
                     toreturn += '\nand '
             toreturn += '\n'
@@ -388,10 +404,8 @@ class Deck():
         
         # seting how many cards make up a full hand if we have over 5+ cards we only 
         # look at 5 but if we have less than 5 we look at all of them
-        checkmax = bool()
         if len(fullHand[0])>4 and len(fullHand[-1])>4:
             top = 5
-            checkmax = True
         else:
             top = min(len(fullHand[0]), len(fullHand[-1])) 
             # we set the top to the minimum amount of cards then we know that if we check the min amount of cards in both we can say the one that has more cards wins
@@ -551,18 +565,14 @@ class Deck():
                 # count up the cards again find where the strihgt starts and then store the top number
                 # we can get away with only storing the top number since both players will need 
                 # 5 cards in a row so if they have the same top they have the same five
-                topnums = [0 for _ in range(len(fullHand))]
-                
-                for hand in range(len(fullHand)):
-                    rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
-                     '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
-                    for card in fullHand[hand]:
-                        rankcount[card.getVal()]+=1
-                    straightlist = []
-                    straightlist.append(rankcount['Ace'])
-                    for value in rankcount.values():
-                        straightlist.append(value)
-                    straightlist.reverse()
+                # even though we could be compairing more than 2 hands we know that they first 2 hands will have exact
+                # same ranking since they would have needed to tie to get back into here with more than 2 hands so we 
+                # only need to look at the first and last hands to accuratly judge them all 
+                topnums = [0,0]  
+                uses = [counts1, counts2]
+                for hand in range(2):
+                    straightlist = [num for num in uses[hand]]
+                    straightlist.append(straightlist[0])
                     for cardSpot in range(len(straightlist)-5):
                         if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5)): 
                             # now we just put the highest card of the straight in some other place to check later
@@ -733,7 +743,7 @@ class Deck():
             case 'Five of a kind':
                 #print('case Five of a kind') 
                 for spot1 in range(len(counts1)):
-                    if counts1[spot1] == 5:
+                    if counts1[spot1] >= 5:
                         for spot2 in range(len(counts2)):
                             if counts2[spot2] == 5:
                                 if spot1==spot2:
@@ -771,7 +781,7 @@ def handelInput(L:list): # just makes sure all the values in the list are actual
 
 def simPrint(deck:Deck): # printing the results as if we are just simulating the hand
     for hand in deck.playerHands:
-        print(hand)
+        print(f'{hand}- Ranks are {hand.getRanks()}')
     print(deck.winnerstr)
 
 def printStats(tot:dict, win:dict):
@@ -809,7 +819,6 @@ def game():
     while True:
         # getting user input
         try: 
-            pass
             numdecks = int(input("How many decks are we playing with? "))
         except:
             print("Must input a number.")
@@ -829,7 +838,6 @@ def game():
         except:
             print("Must input a number.")
             continue
-
         try:
             dead = input('Are there any dead cards? Seperate the values with spaces. ')
             if len(dead)>0:
@@ -854,7 +862,6 @@ def game():
         except:
             print("Inproper input for wild cards.")
             continue
-
         try:
             handsAtaTime = int(input('How many hands should be dealt at a time? '))
         except:
@@ -867,8 +874,6 @@ def game():
                 raise KeyError
         except:
             print('Enter S for simulation or P for play or N for no print.')
-        
-
         if (numplayers*numcards + 8*numboards<= 52*numdecks):
             break
         else:
@@ -880,8 +885,9 @@ def game():
                     , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
     
     con = 'yes'
-    i = 1
+    i = 0
     while con != 'n':
+        i+=1
         # simulating a round of poker
         for handnum in range(handsAtaTime):
             org = Deck(wild, dead, numdecks)
@@ -905,7 +911,6 @@ def game():
                 simPrint(org)
             elif printStyle == 'n':
                 pass
-            i+=1
 
         con = input('Do you want to continue? Y/N ')
         con = con.lower()
