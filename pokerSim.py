@@ -1,27 +1,24 @@
 # trying to make a poker simulator 
  
 # currently we can 
-    # made card and hand class and they have been integrated so 
-    # the working functions work with them, in some cases the functions 
-    # imporoved slihtly now that we abstracted to new classes
-
     # deal hands to any number of players so long as we have enough cards
     # the hands can be any size as long as we have enough cards 
-    # we can deal a board of 5 cards
-    # we can calculate the rank of each players hand 
+    # we can deal any number of boards of 5 cards
+    # we can calculate the rank of each players hand on each board
     # break ties between players if they have te same hand rank
-    # deal any number of boards 
     # have dead cards
 
 # currently we can NOT
-    # 
+    # use wild cards 
+        # wilds are weird since they need to be able to be the top end of straights 
+        # but also need to be able to go in gaps
+        # maybe we have a different function to evaluate the hands if they 
+        # have wild cards since there is going to be a decent amount of new logic
+        # the number of cards needed for each type of paired hand goes down by the number of wild cards they have
 
 # next step
-    # impliment wild cards
-        # originally thought wild cards would just be considered as every rank and every suit
-        # the suit part works in theory i think 
-        # but the rank part would make the code think a player with even a single wild card have the nut straight
-        # wilds are weird since they need to be able to be the top end of straights but also need to be able to go in gaps
+    # see if logic for paired hands can have less ifs
+    # by using the rank count array this could work well for 5 of a kind and full hosue it would save
 
 import random as r
 
@@ -106,10 +103,11 @@ class Hand():
         toreturn = ('Hand is: ')
         for card in self.cards:
             toreturn += card.getStr()
+            if card!=self.cards[-1]: toreturn+='& '
         return toreturn
     
 class Deck():
-    # deck objects contain 52 cards, 4 suits, an 13, values
+    # deck objects contain 52 cards, 4 suits, and 13 values
     # it contains lists of hands that players has
     # it keeps track of the current deck after being dealt and we can save what 
     # cards are burnt but there is no use for those yet
@@ -176,7 +174,10 @@ class Deck():
             self.dealSingleBoard()
         elif numboards==2:
             self.dealDoubleBoard()
-        else:
+        else: 
+            # dealing more than 2 boards deals them in a different way than dealing 1 or 2 boards
+            # but it would be annoying to write a function that would deal any number of boards the same way
+            # lot of work for minimaul results probably will not do
             for i in range(numboards):
                 self.dealSingleBoard()
                 
@@ -347,7 +348,7 @@ class Deck():
                     toreturn += card.getStr()
                 if len(winnershand) > 1 and not hand == winnershand[-1]:
                     toreturn += '\nand '
-            toreturn += '\n'*2
+            toreturn += '\n'
             self.winningLevel.append(winnerslevel)
         self.winnerstr=toreturn
         
@@ -650,7 +651,7 @@ class Deck():
                             hands.pop(0)
                         return hands
                 pass
-            case 'Full House':
+            case 'Full House': # want to change this up to use the rank count array this would make the logic simplier
                 #print('case Full House solved')
                 # can we use the same logic for three of a kind?
                 # sorta but if the three of a kinds are the same then we have to check the pairs
@@ -779,7 +780,7 @@ class Deck():
                                 topcard.append(cardSpot)
                                 break
                     if len(topcard)<1:
-                        topcard.append(99999)
+                        topcard.append(999999)
                     tocompare[hand] = min(topcard)
                 if tocompare[0] == tocompare[-1]:
                     return hands
@@ -793,30 +794,35 @@ class Deck():
                 pass
             case 'Five of a kind':
                 #print('case Five of a kind')
-                # we just need to check the value of the five of a kind
-                # logic for this one is very straight foward
-                for cardSpot1 in range(len(fullHand[0])-4):
-                    if (fullHand[0][cardSpot1] == fullHand[0][cardSpot1+1] 
-                        and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+2]
-                        and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+3] 
-                        and fullHand[0][cardSpot1] == fullHand[0][cardSpot1+4]):
-                        for cardSpot2 in range(len(fullHand[-1])-3):
-                            if (fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+1] 
-                                and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+2]
-                                and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+3] 
-                                and fullHand[-1][cardSpot2] == fullHand[-1][cardSpot2+4]):
-                                if (fullHand[0][cardSpot1] == fullHand[-1][cardSpot2]):
+                ranknums = [{'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0},
+                            {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}]
+                for card in fullHand[0]:
+                    ranknums[0][card.getVal()]+=1
+                for card in fullHand[-1]:
+                    ranknums[-1][card.getVal()]+=1  
+                print(ranknums)
+                counts1 = [value for value in ranknums[0].values()]
+                counts2 = [value for value in ranknums[-1].values()] 
+                counts1.reverse()
+                counts2.reverse()
+                for spot1 in range(len(counts1)):
+                    if counts1[spot1] == 5:
+                        for spot2 in range(len(counts2)):
+                            if counts2[spot2] == 5:
+                                if spot1==spot2:
                                     return hands
-                                elif (fullHand[0][cardSpot1] < fullHand[-1][cardSpot2]):
+                                elif spot1>spot2:
                                     while len(hands)>1:
                                         hands.pop(0)
                                     return hands
-                                elif (fullHand[0][cardSpot1] > fullHand[-1][cardSpot2]):
+                                elif spot1<spot2:
                                     hands.pop(-1)
                                     return hands
+                pass
+                
         return hands
 
-def handelInput(L): # just makes sure all the values in the list are actual card values
+def handelInput(L:list): # just makes sure all the values in the list are actual card values
     changed = []
     for value in L:
         match value:
@@ -836,30 +842,65 @@ def handelInput(L): # just makes sure all the values in the list are actual card
             case _: changed.append(value); pass # default case 
     return changed 
 
+def simPrint(deck:Deck): # printing the results as if we are just simulating the hand
+    for hand in deck.playerHands:
+        print(hand)
+    print(deck.winnerstr)
+
+def printStats(tot:dict, win:dict):
+    percentdict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
+                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
+    print('\nStats of all hands played.')
+    for key in percentdict.keys():
+        try:
+            percentdict[key] = (win[key]/tot[key])*100
+        except ZeroDivisionError:
+            print(f"Hand type -{key}- did not occur.")
+
+    # if we want to see some stats on the hands 
+    #print(f'Total number of hands {sum(tot.values())}')
+    #print(f'Total number of winning hands {sum(win.values())}')
+    print(f'Total number of each type of hand\n{tot}')
+    print(f'Number of times each type of hand won a round\n{win}')
+    print(f'The percent of a that the hand being this rank alone is enough to win. (Tie breakers not needed)')
+    toprint = ''
+    for key, value in percentdict.items():
+        toprint += (f'{key}: {value:.3f} ')
+    print(toprint)
+
 def game():
     numhands = 0
     numrounds = 0
+
+    # default values
+    numdecks = 1
+    numboards = 1
+    numplayers = 6
+    numcards = 2
+    handsAtaTime = 1
+    printStyle = 's'
     while True:
         # getting user input
         try: 
+            pass
             numdecks = int(input("How many decks are we playing with? "))
         except:
-            print("Must input a number")
+            print("Must input a number.")
             continue
         try:
             numboards = int(input('How many boards should be played? '))
         except:
-            print("Must input a number")
+            print("Must input a number.")
             continue
         try:
             numplayers = int(input('How many players should there be? '))
         except:
-            print("Must input a number")
+            print("Must input a number.")
             continue
         try:
             numcards = int(input('How many cards should each player get? '))
         except:
-            print("Must input a number")
+            print("Must input a number.")
             continue
 
         try:
@@ -887,55 +928,62 @@ def game():
             print("Inproper input for wild cards.")
             continue
 
+        try:
+            handsAtaTime = int(input('How many hands should be dealt at a time? '))
+        except:
+            print("Must input a number.")
+            continue
+        try: 
+            printStyle = input('How should the hand be shown? As a simulation or no print? ')
+            printStyle = printStyle.lower()
+            if printStyle != 's' and printStyle != 'n':
+                raise KeyError
+        except:
+            print('Enter S for simulation or P for play or N for no print.')
+        
+
         if (numplayers*numcards + 8*numboards<= 52*numdecks):
             break
         else:
-            print(f'There are now enough cards in {numdecks} deck for that to work enter different numbers.')
+            print(f'There are not enough cards in {numdecks} deck for that to work enter different numbers.')
 
     tothanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                 , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
     winninghanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                     , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
-    percentdict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
-                    , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
-    for i in range(5):
+    
+    con = 'yes'
+    i = 1
+    while con != 'n':
         # simulating a round of poker
-        org = Deck(wild, dead, numdecks)
-        org.shuffle()
-        org.deal(numplayers,numcards,numboards)
-        org.calcHandRanks()
-        org.calcWinner()
+        for handnum in range(handsAtaTime):
+            org = Deck(wild, dead, numdecks)
+            org.shuffle()
+            org.deal(numplayers,numcards,numboards)
+            org.calcHandRanks()
+            org.calcWinner()
 
-        # keep track of all the hands that were dealt
-        for hand in org.playerHands:
-            for rank in hand.getRanks():
-                tothanddict[rank]+=1
-        numrounds +=1
-        numhands += len(org.playerHands)
+            # keep track of all the hands that were dealt
+            for hand in org.playerHands:
+                for rank in hand.getRanks():
+                    tothanddict[rank]+=1
+            numrounds +=1
+            numhands += len(org.playerHands)
 
-        for level in org.winningLevel:
-            winninghanddict[level]+=1
+            for level in org.winningLevel:
+                winninghanddict[level]+=1
 
-        print(f'Round {i}')
-        for hand in org.playerHands:
-            print(hand)
-        print(org.winnerstr)
+            if printStyle == 's':
+                print(f'Round {i}')
+                simPrint(org)
+            elif printStyle == 'n':
+                pass
+            i+=1
 
-    for key in percentdict.keys():
-        try:
-            percentdict[key] = (winninghanddict[key]/tothanddict[key])*100
-        except ZeroDivisionError:
-            print(f"Hand type -{key}- did not occur.")
+        con = input('Do you want to continue? Y/N ')
+        con = con.lower()
 
-    # if we want to see some stats on the hands 
-    #print(f'Total number of hands {sum(tothanddict.values())}')
-    #print(f'Total number of winning hands {sum(winninghanddict.values())}')
-    print(f'Total number of each type of hand\n{tothanddict}')
-    print(f'Number of times each type of hand won a round\n{winninghanddict}')
-    print(f'The percent of a that the hand being this rank alone is enough to win.')
-    toprint = ''
-    for key, value in percentdict.items():
-        toprint += (f'{key}: {value:.3f} ')
-    print(toprint)
+    printStats(tothanddict, winninghanddict)
+    
 
 game()
