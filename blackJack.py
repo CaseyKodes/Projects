@@ -35,6 +35,7 @@ class Hand():
         self.balance = balance
         self.betSize = int()
         self.doubled = False
+        self.insure = False
         self.bj = False
         for card in cards:
             self.cards.append(card)
@@ -67,6 +68,10 @@ class Hand():
         return self.bj
     def setBJ(self, boolean):
         self.bj = boolean
+    def getIN(self):
+        return self.insure
+    def setIN(self, boolean):
+        self.insure = boolean
 
     def getValue(self):
         value = 0
@@ -150,7 +155,7 @@ class Shoe():
     def split(self, player):
         # we need to split the hand into two hands
         # but they need to belong to the same user 
-        
+        print('Functionality for splitting is not implimented.')
         pass
 
     def showHands(self):
@@ -190,12 +195,14 @@ def game():
     shoe.shuffle()
     enough = True
     while len(shoe.deck)>2*(numplayers+1):
+        dealerBlackJack = False
         i = 1
         shoe.deal(numplayers)
         os.system('cls')
         for hand in shoe.players:
             hand.setDoubled(False)
             hand.setBJ(False)
+            hand.setIN(False)
             while True:
                 isaNum = True
                 try: 
@@ -208,12 +215,33 @@ def game():
             hand.setbs(betsize)
             i+=1
         shoe.showHands()
+        topace = False
+        if shoe.dealer.getCards()[0].getVal() == 'Ace':
+            topace = True
+            if shoe.dealer.getValue() == 21:
+                dealerBlackJack = True
+                # dealer has blackjack and we do not need to run any hands
         for player in range(len(shoe.players)):
+            if len(shoe.players[player].getCards())==2 and shoe.players[player].getValue()==21:
+                print(f'Player {player+1} has blackjack!')
+                shoe.players[player].setBJ(True)
+                continue
+            if topace and not shoe.players[player].getBJ():
+                insur = ''
+                while True:
+                    try:
+                        insur = input(f'Does {player+1} want to take insurance? ')
+                        insur = insur.lower()
+                        insur = insur[0]
+                        if insur=='y' or insur=='n':
+                            break
+                        else: raise KeyError
+                    except:
+                        print('Answer must be "y" or "n"')
+                        continue
+                if insur == 'y': shoe.players[player].setIN(True)
+            if dealerBlackJack: continue
             while True:
-                if len(shoe.players[player].getCards())==2 and shoe.players[player].getValue()==21:
-                    print(f'Player {player+1} as blackjack!')
-                    shoe.players[player].setBJ(True)
-                    break
                 try:
                     choice = input(f'Does player {player+1} want to hit, stand, split or double down?\nThey currently have {shoe.players[player].getValue()}. ')
                     choice = choice.lower()
@@ -268,7 +296,7 @@ def game():
             try:
                 if shoe.dealer.getValue() < 17:
                     toadd = shoe.deck.pop(0)
-                    print(f'Dealer hits:, {toadd}')
+                    print(f'Dealer hits: {toadd}')
                     shoe.dealer.addCard(toadd)
                 elif shoe.dealer.getValue() > 21:
                     print('Dealer busts.')
@@ -290,10 +318,12 @@ def game():
                 elif shoe.players[player].getBJ():
                     times = 2.5
                 else: times = 1
+
                 if shoe.players[player].getBJ():
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
                     print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
                     continue
+
                 if shoe.players[player].getValue() <= 21:
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
                     print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Their balance is now {shoe.players[player].getBalance()}')
@@ -308,10 +338,22 @@ def game():
                 elif shoe.players[player].getBJ():
                     times = 2.5
                 else: times = 1
+
                 if shoe.players[player].getBJ():
-                    shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
+                    if dealerBlackJack:
+                        print(f'Both {player+1} and Dealer have Black Jack so they push, PLayer balance is now {shoe.players[player].getBalance()}')
+                    else:
+                        shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
+                        print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
                     continue
+
+                if shoe.players[player].getIN() and not dealerBlackJack:
+                    shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
+                    print(f'Player {player+1} took insurance and lost. Their balance is now {shoe.players[player].getBalance()}')
+                elif shoe.players[player].getIN() and dealerBlackJack:
+                    shoe.players[player].changeBalance(shoe.players[player].getbs())
+                    print(f'Player {player+1} took insurance and Won. Their balance is now {shoe.players[player].getBalance()}')
+
                 if shoe.players[player].getValue() < shoe.dealer.getValue():
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
                     print(f'Player {player+1} lost to dealer. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
