@@ -8,6 +8,13 @@
     # break ties between players if they have te same hand rank
     # have dead cards
 
+# working on 
+    # i believe wild cards work for pair type hands now
+    # think flushes work now
+    
+    # straights can be identified if the player has 1-2 wilds and 4 or 3 cards in a row but for gapers it does not work yet
+    # and ties are not broken properly yet for straights with wilds completing them
+
 # currently we can NOT
 '''
 
@@ -236,10 +243,13 @@ class Deck():
             board=0
             for rank in hand.getRanks():
                 # finding flushes 
-                # instead of just adding to something telling us if we have the suits lets move the cards to be sorted by suit
+                numwilds = 0
                 suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
                 for card in hand.getCards():
                     if card.getVal() in self.dead:
+                        continue
+                    if card.getVal() in self.wild:
+                        numwilds+=1
                         continue
                     suitcount[card.getSuit()].append(card)
                 if len(self.boardList) > 0:
@@ -247,8 +257,11 @@ class Deck():
                         for card in b:
                             if card.getVal() in self.dead:
                                 continue
+                            if card.getVal() in self.wild:
+                                numwilds+=1
+                                continue
                             suitcount[card.getSuit()].append(card)
-                if any(len(x) > 4 for x in suitcount.values()):
+                if any(len(x) > 4-numwilds for x in suitcount.values()):
                     # if we are here we know we have a flush now we want to check if those cards are in order 
                     # looking for straight flush
                     for key, value in suitcount.items():
@@ -264,13 +277,14 @@ class Deck():
                             straightlist.append(value)
                         straightLenghth = 5 # length of straight
                         for starter in range(len(straightlist)-straightLenghth):
-                            if all(straightlist[starter:starter+straightLenghth]):
+                            if all(straightlist[starter:starter+straightLenghth-numwilds]):
                                 if self.hr.index(hand.getRank(board)) < self.hr.index('Straight Flush'):
                                     hand.setRank('Straight Flush', board)
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Flush'):
                         hand.setRank('Flush', board)
 
                 # filling how many instances of a card value there are 
+                # before wilds 
                 rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
                              '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                 if len(self.boardList) > 0:
@@ -291,26 +305,37 @@ class Deck():
                     straightlist.append(value)
                 straightLenghth = 5 # x = length of straight
                 for starter in range(len(straightlist)-straightLenghth):
-                    if all(straightlist[starter:starter+straightLenghth]):
+                    if all(straightlist[starter:starter+straightLenghth-numwilds]):
                         if self.hr.index(hand.getRank(board)) < self.hr.index('Straight'):
                             hand.setRank('Straight', board)
 
+                # after wilds 
+                # this is so wilds are not counted ontop of themselves
+                if numwilds>0:
+                    for key in rankcount.keys():
+                        if key in self.wild:
+                            rankcount[key] = 0
+
                 # determining based off the number of instances of that card value what type of hand a player has
                 # this is for pairs two pairs three of a kind full house and four of a kind
-                if any(x>=5 for x in rankcount.values()):
+                if any(x>=5-numwilds for x in rankcount.values()):
                     # this is the 5 of a kind case 
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Five of a kind'):
                         hand.setRank('Five of a kind', board)
-                elif any(x==4 for x in rankcount.values()):
+                elif any(x==4-numwilds for x in rankcount.values()):
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Four of a kind'):
                         hand.setRank('Four of a kind', board)
-                elif any(x==3 for x in rankcount.values()) and any(y==2 for y in rankcount.values()):
-                    if self.hr.index(hand.getRank(board)) < self.hr.index('Full House'):
-                        hand.setRank('Full House', board)
-                elif any(x==3 for x in rankcount.values()):
-                    if self.hr.index(hand.getRank(board)) < self.hr.index('Three of a kind'):
-                        hand.setRank('Three of a kind', board)
-                elif any(x==2 for x in rankcount.values()):
+                elif any(x==3-numwilds for x in rankcount.values()):
+                    for key in rankcount.keys():
+                        if rankcount[key] == 3-numwilds:
+                            smaller = {key: value for key, value in rankcount.items()}
+                            smaller.pop(key)
+                            if any(y==2 for y in smaller.values()):
+                                if self.hr.index(hand.getRank(board)) < self.hr.index('Full House'):
+                                    hand.setRank('Full House', board)
+                            if self.hr.index(hand.getRank(board)) < self.hr.index('Three of a kind'):
+                                hand.setRank('Three of a kind', board)
+                elif any(x==2-numwilds for x in rankcount.values()):
                     for key in rankcount.keys():
                         if rankcount[key] == 2:
                             smaller = {key: value for key, value in rankcount.items()}
@@ -371,19 +396,28 @@ class Deck():
     def tiebreak(self, hands, level, boardIndex):
         # make a list that has all hands with all cards in a hand including board and hole cards
         fullHand = [[]]*len(hands)
+        wilds = [[]]*len(hands)
         for hand in range(len(hands)):
             new = []
+            wild = 0
             if len(self.boardList)>0:
                 for b in self.boardList[boardIndex]:
                     for card in b:
                         if card.getVal() in self.dead:
                             continue
+                        if card.getVal() in self.wild and (level!='Straight' and level!='Straight Flush'):
+                            wild+=1
+                            continue
                         new.append(card)
             for card in hands[hand].getCards():
                 if card.getVal() in self.dead:
                     continue
+                if card.getVal() in self.wild and (level!='Straight' and level!='Straight Flush'):
+                    wild+=1
+                    continue
                 new.append(card)
             fullHand[hand] = new
+            wilds[hand] = wild
 
         #getting the exact number of each rank card in the first and last hand
         # this is the most helpful for hands that need 5 cards it does not do much use otherwise but still worth keeping
@@ -397,6 +431,24 @@ class Deck():
         counts2 = [value for value in ranknums[-1].values()] 
         counts1.reverse()
         counts2.reverse()
+
+        # this uses the wilds in a hand to make that hand better for pairs
+        # it is repeat code I want to make it better not sure how
+        if level != 'Straight' and level != 'Flush' and level != 'Straight Flush':
+            maximum = 0
+            maxIndex = 0
+            for index in range(len(counts1)):
+                if counts1[index]+wilds[0] > maximum:
+                    maximum = counts1[index]+wilds[0]
+                    maxIndex = index
+            counts1[maxIndex] = maximum
+            maximum = 0
+            maxIndex = 0
+            for index in range(len(counts2)):
+                if counts2[index]+wilds[-1] > maximum:
+                    maximum = counts2[index]+wilds[-1]
+                    maxIndex = index
+            counts2[maxIndex] = maximum
 
         # sort that each list of cards in each hand so we can compare the lists easily
         for hand in fullHand:
@@ -599,6 +651,10 @@ class Deck():
                     suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
                     for card in fullHand[hand]:
                         suitcount[card.getSuit()].append(card)
+                    for number in range(wilds[hand]):
+                        for key in suitcount.keys():
+                            suitcount[key].append(Card('Ace', key))
+                            suitcount[key].sort(reverse=True)
                     maybeadd = []
                     for numSuited in suitcount.values():
                         if len(numSuited)>4:
@@ -613,6 +669,7 @@ class Deck():
                             elif maybeadd[0][card] == maybeadd[-1][card]:
                                 continue
                     tocompare[hand] = maybeadd
+
                 # now we have tocompare filled with the flushes from each hand so we need to compare them
                 for card in range(len(tocompare[0])):
                     if tocompare[0][card] == tocompare[-1][card]:
