@@ -56,13 +56,10 @@ class Hand():
                 aces +=1
 
         # logic for aces is wrong 
-        if aces<1:
-            return value
-        elif aces==1:
-            if value+11 <=21:
-                return value
-            else: return value+1
-        else: return value + aces
+        if (value+11+aces-1) > value+aces and (value+11+aces-1)<=21:
+            return (value+11+aces-1)
+        else:
+            return value+aces
 
     def __str__(self):
         toreturn = ('Player has: ')
@@ -106,9 +103,10 @@ class Shoe():
         self.players[player].addCard(self.deck.pop(0))
         print(self.players[player].getCards()[-1])
         if self.players[player].getValue() >21:
-            print(f'Player {player+1} busts.')
+            print(f'Player {player+1} busts. With a value of {self.players[player].getValue()}')
             return 'break'
         elif self.players[player].getValue() <21:
+            print(f'Player {player+1} with a value of {self.players[player].getValue()}')
             return 'continue'
         elif self.players[player].getValue() == 21:
             print(f'Player {player+1} has 21 and is done.')
@@ -150,7 +148,8 @@ def game():
             break
     shoe = Shoe(numdecks)
     shoe.shuffle()
-    while len(shoe.deck)>2*numplayers:
+    enough = True
+    while len(shoe.deck)>2*(numplayers+1):
         shoe.deal(numplayers)
         os.system('cls')
         shoe.showHands()
@@ -164,41 +163,52 @@ def game():
                 except:
                     print("Choice must be 'Hit', 'Stand', or 'Double'.")
                     continue
-                if choice[0] == 'h':
-                    outcome = shoe.hit(player)
-                    if outcome == 'break':
+                try:
+                    if choice[0] == 'h':
+                        outcome = shoe.hit(player)
+                        if outcome == 'break':
+                            break
+                    elif choice[0] == 's':
+                        shoe.stand(player)
                         break
-                elif choice[0] == 's':
-                    shoe.stand(player)
+                    elif choice[0] == 'd':
+                        shoe.doubleDown(player)
+                        break
+                except:
+                    print('Ran out of cards in the deck, hands are final.')
+                    enough = False
                     break
-                elif choice[0] == 'd':
-                    shoe.doubleDown(player)
-                    break
+            if not enough:
+                break
 
         dealerBust = False
         print(f'Dealers full hand is:')
         for card in shoe.dealer.getCards():
             print(card)
-        print(f'With a value of {shoe.dealer.getValue()}')
         while True:
-            if shoe.dealer.getValue() < 17:
-                toadd = shoe.deck.pop(0)
-                print(toadd)
-                shoe.dealer.addCard(toadd)
-            elif shoe.dealer.getValue() > 21:
-                print('Dealer busts.')
-                dealerBust = True
-                break
-            else: # if dealer is between 17 and 21
-                print('Dealer stands.')
-                break
+            try:
+                if shoe.dealer.getValue() < 17:
+                    toadd = shoe.deck.pop(0)
+                    print(toadd)
+                    shoe.dealer.addCard(toadd)
+                elif shoe.dealer.getValue() > 21:
+                    print('Dealer busts.')
+                    dealerBust = True
+                    break
+                else: # if dealer is between 17 and 21
+                    print('Dealer stands.')
+                    break
+            except:
+                    print('Ran out of cards in the deck, hands are final.')
+                    enough = False
+                    break
         print(f'Dealer final value is {shoe.dealer.getValue()}')
 
         if dealerBust:
             for player in range(len(shoe.players)):
                 if shoe.players[player].getValue() <= 21:
                     print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}')
-                elif shoe.players[player].getValue > 21:
+                elif shoe.players[player].getValue() > 21:
                     print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}')
         elif not dealerBust:
             for player in range(len(shoe.players)):
@@ -212,10 +222,15 @@ def game():
                     print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}')
         
         while True:
-            exit = input('Enter any character to play the next hand. \nEnter 0 to exit. ')
-            if exit and exit !='0':
-                break
-            elif exit == '0':
+            if enough:
+                exit = input('Enter any character to play the next hand. \nEnter 0 to exit. ')
+                if exit and exit !='0':
+                    break
+                elif exit == '0':
+                    quit()
+            else:
+                print('Shoe is empty thank you for playing.')
                 quit()
+    print('Not enough cards for the number of players specified thank you for playing.')
 
 game()
