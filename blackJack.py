@@ -231,24 +231,31 @@ def game():
                         shoe.stand(player)
                         break
                     elif choice[0:2] == 'sp':
-                        if shoe.players[player][0].getRank() != shoe.players[player][1].getRank():
-                            print('This player can not split they do not have a pair.')
-                            continue
-                        if len(shoe.playerB[player].getCards()) > 2:
+                        if len(shoe.players[player].getCards()) > 2:
                             print('This player can not split they have more than 2 cards.')
                             continue
-                        if len(shoe.deck)<2:
+                        elif shoe.players[player].getCards()[0].getValnum() != shoe.players[player].getCards()[1].getValnum():
+                            print('This player can not split they do not have a pair.')
+                            continue
+                        elif len(shoe.deck)<2:
                             print('There are not enough cards in the deck to split.')
                             continue
-                        if (shoe.players[player][0].getRank() == shoe.players[player][1].getRank() 
-                            and len(shoe.deck)>2 and len(shoe.playerB[player].getCards()) == 2):
+
+
+
+                        if (shoe.players[player].getCards()[0].getValnum() == shoe.players[player].getCards()[1].getValnum()
+                            and len(shoe.deck)>2 and len(shoe.players[player].getCards()) == 2):
                             shoe.split(player)
+                            ####################################    NEED TO FIGURE OUT
                         
+
+
+
                     elif choice[0] == 'd':
                         shoe.doubleDown(player)
                         break
-                except:
-                    print('Ran out of cards in the deck, hands are final.')
+                except Exception as e:
+                    print('Ran out of cards in the deck, hands are final.', e)
                     enough = False
                     break
             if not enough:
@@ -261,7 +268,7 @@ def game():
             try:
                 if shoe.dealer.getValue() < 17:
                     toadd = shoe.deck.pop(0)
-                    print(toadd)
+                    print(f'Dealer hits:, {toadd}')
                     shoe.dealer.addCard(toadd)
                 elif shoe.dealer.getValue() > 21:
                     print('Dealer busts.')
@@ -283,14 +290,13 @@ def game():
                 elif shoe.players[player].getBJ():
                     times = 2.5
                 else: times = 1
+                if shoe.players[player].getBJ():
+                    shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
+                    print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
+                    continue
                 if shoe.players[player].getValue() <= 21:
-                    if shoe.players[player].getBJ():
-                        shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                        print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
-                        continue
-                    else:
-                        shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                        print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Their balance is now {shoe.players[player].getBalance()}')
+                    shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
+                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Their balance is now {shoe.players[player].getBalance()}')
                 elif shoe.players[player].getValue() > 21:
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
                     print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
@@ -302,16 +308,15 @@ def game():
                 elif shoe.players[player].getBJ():
                     times = 2.5
                 else: times = 1
+                if shoe.players[player].getBJ():
+                    shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
+                    print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
+                    continue
                 if shoe.players[player].getValue() < shoe.dealer.getValue():
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
                     print(f'Player {player+1} lost to dealer. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
                 elif shoe.players[player].getValue() == shoe.dealer.getValue():
-                    if shoe.players[player].getBJ():
-                        shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                        print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
-                        continue
-                    else:
-                        print(f'Player {player+1} pushes with the dealer. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} pushes with the dealer. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
                 elif shoe.players[player].getValue() > shoe.dealer.getValue() and shoe.players[player].getValue() < 22:
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
                     print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
