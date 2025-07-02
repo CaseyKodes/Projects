@@ -7,15 +7,13 @@
     # we can calculate the rank of each players hand on each board
     # break ties between players if they have te same hand rank
     # have dead cards
-
-# working on 
-    # i believe wild cards work for pair type hands now
-    # think flushes work now
-    
-    # straights can be identified if the player has 1-2 wilds and 4 or 3 cards in a row but for gapers it does not work yet
-    # and ties are not broken properly yet for straights with wilds completing them
+    # use wild cards to correctly create and break ties between all hand types but straight and straight flushes 
 
 # currently we can NOT
+    #use wild cards to fill gaps in straights but they can be used to finish the outside of a straight
+
+# working on
+    # adding in funcitonality so wilds can be hte inside cards in straights 
 '''
 
 WILD CARD TROUBLES 
@@ -268,44 +266,45 @@ class Deck():
                         rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
                          '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                         for card in value:
-                            if card.getVal() in self.dead:
+                            if card.getVal() in self.dead or card.getVal() in self.wild:
                                 continue
                             rankcount[card.getVal()]+=1
                         straightlist = []
                         straightlist.append(rankcount['Ace'])
                         for value in rankcount.values():
                             straightlist.append(value)
-                        straightLenghth = 5 # length of straight
+                        straightLenghth = 5-numwilds # length of straight
                         for starter in range(len(straightlist)-straightLenghth):
-                            if all(straightlist[starter:starter+straightLenghth-numwilds]):
+                            if all(straightlist[starter:starter+straightLenghth]):
                                 if self.hr.index(hand.getRank(board)) < self.hr.index('Straight Flush'):
                                     hand.setRank('Straight Flush', board)
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Flush'):
                         hand.setRank('Flush', board)
 
                 # filling how many instances of a card value there are 
-                # before wilds 
+                # this works to find natural straights and straights that are 5-the number of wilds in a hand 
+                # where the wilds are then used to be the finishing cards on the outside of the straight
+                # TODO it does not work for using wilds to fill gaps so I think i just make a functionality for that
                 rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
                              '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                 if len(self.boardList) > 0:
                     for b in self.boardList[board]:
                         for card in b:
-                            if card.getVal() in self.dead:
+                            if card.getVal() in self.dead or card.getVal() in self.wild:
                                 continue
                             rankcount[card.getVal()] += 1
                 for card in hand.getCards():
-                    if card.getVal() in self.dead:
+                    if card.getVal() in self.dead or card.getVal() in self.wild:
                         continue
                     rankcount[card.getVal()]+=1
-
                 # find straights
                 straightlist = []
                 straightlist.append(rankcount['Ace'])
                 for value in rankcount.values():
                     straightlist.append(value)
-                straightLenghth = 5 # x = length of straight
+                straightLenghth = 5-numwilds # x = length of straight
                 for starter in range(len(straightlist)-straightLenghth):
-                    if all(straightlist[starter:starter+straightLenghth-numwilds]):
+                    if all(straightlist[starter:starter+straightLenghth]):
                         if self.hr.index(hand.getRank(board)) < self.hr.index('Straight'):
                             hand.setRank('Straight', board)
 
@@ -405,14 +404,14 @@ class Deck():
                     for card in b:
                         if card.getVal() in self.dead:
                             continue
-                        if card.getVal() in self.wild and (level!='Straight' and level!='Straight Flush'):
+                        if card.getVal() in self.wild:
                             wild+=1
                             continue
                         new.append(card)
             for card in hands[hand].getCards():
                 if card.getVal() in self.dead:
                     continue
-                if card.getVal() in self.wild and (level!='Straight' and level!='Straight Flush'):
+                if card.getVal() in self.wild:
                     wild+=1
                     continue
                 new.append(card)
@@ -622,13 +621,20 @@ class Deck():
                 # only need to look at the first and last hands to accuratly judge them all 
                 topnums = [0,0]  
                 uses = [counts1, counts2]
+                wuse = [0,-1]
                 for hand in range(2):
                     straightlist = [num for num in uses[hand]]
                     straightlist.append(straightlist[0])
-                    for cardSpot in range(len(straightlist)-5):
-                        if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5)): 
+                    for cardSpot in range(len(straightlist)-5+wilds[wuse[hand]]):
+                        if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5-wilds[wuse[hand]])): 
                             # now we just put the highest card of the straight in some other place to check later
                             topnums[hand] = cardSpot
+                            if wilds[wuse[hand]]>0: 
+                                # if we have wilds we check to see if we can use them as the 
+                                #high card in the staright if we can the index of the top card in the straight should go down
+                                for i in range(wilds[wuse[hand]],0,-1):
+                                    if topnums[hand]-i>=0 and topnums[hand]-i<topnums[hand]:
+                                        topnums[hand] = topnums[hand]-i
                             break
 
                 if topnums[0] == topnums[-1]:
@@ -720,7 +726,13 @@ class Deck():
                 for spot1 in range(len(counts1)):
                     if counts1[spot1] == 4:
                         for spot2 in range(len(counts2)):
-                            if counts2[spot2] == 4:
+
+
+                            if counts2[spot2] == 4: # error here that does not show up often  TODO
+                                # only happens when wild cards are introduced
+                                # now is not showing up?
+
+
                                 if spot1==spot2:
                                     # now we look for the highest card 
                                     counts1.pop(spot1)
@@ -764,7 +776,7 @@ class Deck():
                         suitcount[card.getSuit()].append(card)
                     maybeadd = []
                     for numSuited in suitcount.values():
-                        if len(numSuited)>4:
+                        if len(numSuited)>4-wilds[hand]:
                             maybeadd.append(numSuited[0:top])
                     # now for every list of cards that makes a flush we need to see if there is a stright in them
                     topcard = []
@@ -778,21 +790,30 @@ class Deck():
                         for value in rankcount.values():
                             straightlist.append(value)
                         straightlist.reverse()
-                        for cardSpot in range(len(straightlist)-5):
-                            if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5)):
+                        for cardSpot in range(len(straightlist)-5+wilds[hand]):
+                            if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5-wilds[hand])):
                                 # we found a straight flush 
                                 # we can actually jut save the highest card rank in the straight flush 
+                                if wilds[hand]>0: 
+                                # if we have wilds we check to see if we can use them as the 
+                                #high card in the staright if we can the index of the top card in the straight should go down
+                                    for i in range(wilds[hand],0,-1):
+                                        if cardSpot-i>=0 and cardSpot-i<cardSpot:
+                                            cardSpot = cardSpot-i
                                 topcard.append(cardSpot)
                                 break
                     if len(topcard)<1:
                         topcard.append(999999)
                     tocompare[hand] = min(topcard)
                 if tocompare[0] == tocompare[-1]:
+                    print('same')
                     return hands
                 elif tocompare[0] < tocompare[-1]:
+                    print('first')
                     hands.pop(-1)
                     return hands
                 elif tocompare[0] > tocompare[-1]:
+                    print('last')
                     while len(hands)>1:
                         hands.pop(0)
                     return hands
