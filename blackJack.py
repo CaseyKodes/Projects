@@ -36,6 +36,9 @@ class Hand():
         self.betSize = int()
         self.doubled = False
         self.insure = False
+        self.split = False
+        self.splitAmounts = list()
+        self.doubleArray = list()
         self.bj = False
         for card in cards:
             self.cards.append(card)
@@ -72,6 +75,18 @@ class Hand():
         return self.insure
     def setIN(self, boolean):
         self.insure = boolean
+    def getSplit(self):
+        return self.split
+    def setSplit(self, boolean):
+        self.split = boolean
+    def getSplitNums(self):
+        return self.splitAmounts
+    def addSplitNum(self, amount):
+        self.splitAmounts.append(amount)
+    def getDarray(self):
+        return self.doubleArray
+    def addDarray(self, boolean):
+        self.doubleArray.append(boolean)
 
     def getValue(self):
         value = 0
@@ -147,16 +162,93 @@ class Shoe():
         print(f'Player {player+1} has {self.players[player].getValue()} and stands.')
 
     def doubleDown(self, player):
-        self.players[player].setDoubled(True)
-        self.players[player].addCard(self.deck.pop(0))
-        print(self.players[player].getCards()[-1])
-        print(f'Player {player+1} has {self.players[player].getValue()} and is done since they doubled down.')
+        player.setDoubled(True)
+        player.addCard(self.deck.pop(0))
+        print(player.getCards()[-1])
+        print(f'Player has {player.getValue()} and is done since they doubled down.')
     
-    def split(self, player):
+    def split(self, player:Hand):
         # we need to split the hand into two hands
         # but they need to belong to the same user 
-        print('Functionality for splitting is not implimented.')
-        pass
+        # we need to make 2 new hands one from each of the cards in the hand
+        hand1 = Hand([player.getCards()[0]], 0)
+        hand2 = Hand([player.getCards()[1]], 0)
+        hands = [hand1, hand2]
+        splitTotals = [0,0]
+        dtoatals = [False, False]
+        player.setSplit(True)
+        i = -1
+        for hand in hands:
+            i+=1
+            hand.addCard(self.deck.pop(0))
+            print(f'{hand}')
+            while True:
+                try:
+                    choice = input(f'Does player want to hit, stand, split or double down?\nThey currently have {hand.getValue()}. ')
+                    choice = choice.lower()
+                    if choice[0]!='h' and choice[0:2]!='st' and choice[0:2]!='sp' and choice[0]!='d':
+                        raise KeyError
+                except:
+                    print("Choice must be 'Hit', 'Stand', 'Split', or 'Double'.")
+                    continue
+                if len(self.deck)>1:
+                    if choice[0] == 'h':
+                        dtoatals[i] = False
+                        toadd = self.deck.pop(0)
+                        print(toadd)
+                        hand.addCard(toadd)
+                        if hand.getValue() == 21:
+                            print(f'This split hand is done with a value of 21.')
+                            splitTotals[i] = (hand.getValue())
+                            break
+                        elif hand.getValue() > 21:
+                            print(f'This split hand busts with a value of {hand.getValue()}')
+                            splitTotals[i] = (hand.getValue())
+                            break
+                        else:
+                            continue
+                        
+                    elif choice[0:2] == 'st':
+                        print('Players stays on this split hand with a value of: ', hand.getValue())
+                        splitTotals[i] = (hand.getValue())
+                        dtoatals[i] = False
+                        break
+                        
+                    elif choice[0:2] == 'sp':
+                        if len(hand.getCards()) > 2:
+                            print('This player can not split they have more than 2 cards.')
+                            continue
+                        elif hand.getCards()[0].getValnum() != hand.getCards()[1].getValnum():
+                            print('This player can not split they do not have a pair.')
+                            continue
+                        elif len(self.deck)<2:
+                            print('There are not enough cards in the deck to split.')
+                            continue
+
+                        if (hand.getCards()[0].getValnum() == hand.getCards()[1].getValnum()
+                            and len(self.deck)>2 and len(hand.getCards()) == 2):
+                            toadd1, toadd2 = self.split(hand) # does eveyrthing in the split function
+                            for num in toadd1:
+                                splitTotals.append(num)
+                            for TF in toadd2:
+                                dtoatals.append(TF)
+                            break
+                        
+                    elif choice[0] == 'd':
+                        dtoatals[i] = True
+                        toadd = self.deck.pop(0)
+                        print(toadd)
+                        hand.addCard(toadd)
+                        print(f'Player dobuled down this split hand and ended with {hand.getValue()}')
+                        splitTotals[i] = hand.getValue()
+                        break
+
+        for i in range(len(dtoatals)):
+            if splitTotals[i] != 0:
+                player.addSplitNum(splitTotals[i])
+                player.addDarray(dtoatals[i])
+
+        return splitTotals, dtoatals
 
     def showHands(self):
         print('Players have:')
@@ -203,6 +295,7 @@ def game():
             hand.setDoubled(False)
             hand.setBJ(False)
             hand.setIN(False)
+            hand.setSplit(False)
             while True:
                 isaNum = True
                 try: 
@@ -215,19 +308,12 @@ def game():
             hand.setbs(betsize)
             i+=1
         shoe.showHands()
-        topace = False
         if shoe.dealer.getCards()[0].getVal() == 'Ace':
-            topace = True
             if shoe.dealer.getValue() == 21:
                 dealerBlackJack = True
                 # dealer has blackjack and we do not need to run any hands
-        for player in range(len(shoe.players)):
-            if len(shoe.players[player].getCards())==2 and shoe.players[player].getValue()==21:
-                print(f'Player {player+1} has blackjack!')
-                shoe.players[player].setBJ(True)
-                continue
             for insuredPLay in range(len(shoe.players)):
-                if topace and not shoe.players[player].getBJ():
+                if not shoe.players[player].getBJ():
                     insur = ''
                     while True:
                         try:
@@ -241,6 +327,12 @@ def game():
                             print('Answer must be "y" or "n"')
                             continue
                     if insur == 'y': shoe.players[player].setIN(True)
+
+        for player in range(len(shoe.players)):
+            if len(shoe.players[player].getCards())==2 and shoe.players[player].getValue()==21:
+                print(f'Player {player+1} has blackjack!')
+                shoe.players[player].setBJ(True)
+                continue
             if dealerBlackJack: continue
             while True:
                 try:
@@ -269,19 +361,13 @@ def game():
                         elif len(shoe.deck)<2:
                             print('There are not enough cards in the deck to split.')
                             continue
-
-
-
                         if (shoe.players[player].getCards()[0].getValnum() == shoe.players[player].getCards()[1].getValnum()
                             and len(shoe.deck)>2 and len(shoe.players[player].getCards()) == 2):
-                            shoe.split(player)
-                            ####################################    NEED TO FIGURE OUT
+                            shoe.split(shoe.players[player]) # does eveyrthing in the split function
+                            break
                         
-
-
-
                     elif choice[0] == 'd':
-                        shoe.doubleDown(player)
+                        shoe.doubleDown(shoe.players[player])
                         break
                 except Exception as e:
                     print('Ran out of cards in the deck, hands are final.', e)
@@ -320,6 +406,26 @@ def game():
                     times = 2.5
                 else: times = 1
 
+                if shoe.players[player].getSplit():
+                    wins = 0
+                    loses = 0
+                    extraloses = 0
+                    extrawins = 0
+                    print(shoe.players[player].getSplitNums())
+                    print(shoe.players[player].getDarray())
+                    for num in shoe.players[player].getSplitNums():
+                        if num > 21:
+                            loses+=1
+                            if shoe.players[player].getDarray()[i]:
+                                extraloses +=1
+                        elif num<= 21:
+                            wins +=1
+                            if shoe.players[player].getDarray()[i]:
+                                extrawins +=1
+                    shoe.players[player].changeBalance(shoe.players[player].getbs()*(wins+extrawins-loses-extraloses))
+                    print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance()}')
+                    continue
+
                 if shoe.players[player].getBJ():
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
                     print(f'Player {player+1} beat the dealer, with Black Jack. Updated balance = {shoe.players[player].getBalance()}')
@@ -340,6 +446,34 @@ def game():
                     times = 2.5
                 else: times = 1
 
+                if shoe.players[player].getSplit():
+                    wins = 0
+                    loses = 0
+                    extraloses = 0
+                    extrawins = 0
+                    print(shoe.players[player].getSplitNums())
+                    print(shoe.players[player].getDarray())
+                    i = 0
+                    for num in shoe.players[player].getSplitNums():
+                        if num > 21:
+                            loses+=1
+                            if shoe.players[player].getDarray()[i]:
+                                extraloses +=1
+                        elif num <= 21:
+                            if num>shoe.dealer.getValue():
+                                wins +=1
+                                if shoe.players[player].getDarray()[i]:
+                                    extrawins +=1
+                            elif num < shoe.dealer.getValue():
+                                loses +=1
+                                if shoe.players[player].getDarray()[i]:
+                                    extraloses +=1
+                        i+=1
+                        
+                    shoe.players[player].changeBalance(shoe.players[player].getbs()*(wins+extrawins-loses-extraloses))
+                    print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance()}')
+                    continue
+
                 if shoe.players[player].getBJ():
                     if dealerBlackJack:
                         print(f'Both {player+1} and Dealer have Black Jack so they push. Updated balance = {shoe.players[player].getBalance()}')
@@ -351,9 +485,11 @@ def game():
                 if shoe.players[player].getIN() and not dealerBlackJack:
                     shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
                     print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance()}')
+                    continue
                 elif shoe.players[player].getIN() and dealerBlackJack:
                     shoe.players[player].changeBalance(shoe.players[player].getbs())
                     print(f'Player {player+1} took insurance and Won. Updated balance = {shoe.players[player].getBalance()}')
+                    continue
 
                 if shoe.players[player].getValue() < shoe.dealer.getValue():
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
