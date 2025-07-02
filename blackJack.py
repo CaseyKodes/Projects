@@ -9,7 +9,7 @@ class Card():
     def __init__(self, val, suit):
         self.Suit = suit
         self.Val = val
-        self.string = f'{self.Val} of {self.Suit} '
+        self.string = f'{self.Val} {self.Suit} '
     def getVal(self):
         return self.Val
     def getValnum(self):
@@ -104,7 +104,7 @@ class Shoe():
         self.players = list()
         self.balance = balance
 
-        suits = ['Spades', 'Hearts', 'Clubs', 'Diamonds']
+        suits = ['s', 'h', 'c', 'd']
         values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 'Jack', 'Queen', 'King', 'Ace']
         for deck in range(numdecks):
             for suit in suits:
@@ -162,7 +162,7 @@ class Shoe():
         print('Players have:')
         i = 1
         for hand in self.players:
-            print(f'{i} {hand}- with a value of {hand.getValue()}, and a current balance of {hand.getBalance()}')
+            print(f'{i} {hand}\nWith a current balance of {hand.getBalance()}')
             i+=1
         print('Dealers top card is:')
         print(self.dealer.getCards()[0])
@@ -226,20 +226,21 @@ def game():
                 print(f'Player {player+1} has blackjack!')
                 shoe.players[player].setBJ(True)
                 continue
-            if topace and not shoe.players[player].getBJ():
-                insur = ''
-                while True:
-                    try:
-                        insur = input(f'Does {player+1} want to take insurance? ')
-                        insur = insur.lower()
-                        insur = insur[0]
-                        if insur=='y' or insur=='n':
-                            break
-                        else: raise KeyError
-                    except:
-                        print('Answer must be "y" or "n"')
-                        continue
-                if insur == 'y': shoe.players[player].setIN(True)
+            for insuredPLay in range(len(shoe.players)):
+                if topace and not shoe.players[player].getBJ():
+                    insur = ''
+                    while True:
+                        try:
+                            insur = input(f'Does {insuredPLay+1} want to take insurance? ')
+                            insur = insur.lower()
+                            insur = insur[0]
+                            if insur=='y' or insur=='n':
+                                break
+                            else: raise KeyError
+                        except:
+                            print('Answer must be "y" or "n"')
+                            continue
+                    if insur == 'y': shoe.players[player].setIN(True)
             if dealerBlackJack: continue
             while True:
                 try:
@@ -321,15 +322,15 @@ def game():
 
                 if shoe.players[player].getBJ():
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} beat the dealer, with Black Jack. Updated balance = {shoe.players[player].getBalance()}')
                     continue
 
                 if shoe.players[player].getValue() <= 21:
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
                 elif shoe.players[player].getValue() > 21:
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
                 
         elif not dealerBust:
             for player in range(len(shoe.players)):
@@ -341,38 +342,36 @@ def game():
 
                 if shoe.players[player].getBJ():
                     if dealerBlackJack:
-                        print(f'Both {player+1} and Dealer have Black Jack so they push, PLayer balance is now {shoe.players[player].getBalance()}')
+                        print(f'Both {player+1} and Dealer have Black Jack so they push. Updated balance = {shoe.players[player].getBalance()}')
                     else:
                         shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                        print(f'Player {player+1} beat the dealer, with Black Jack. Their balance is now {shoe.players[player].getBalance()}')
+                        print(f'Player {player+1} beat the dealer, with Black Jack. Updated balance = {shoe.players[player].getBalance()}')
                     continue
 
                 if shoe.players[player].getIN() and not dealerBlackJack:
                     shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
-                    print(f'Player {player+1} took insurance and lost. Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance()}')
                 elif shoe.players[player].getIN() and dealerBlackJack:
                     shoe.players[player].changeBalance(shoe.players[player].getbs())
-                    print(f'Player {player+1} took insurance and Won. Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} took insurance and Won. Updated balance = {shoe.players[player].getBalance()}')
 
                 if shoe.players[player].getValue() < shoe.dealer.getValue():
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} lost to dealer. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} lost to dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
                 elif shoe.players[player].getValue() == shoe.dealer.getValue():
-                    print(f'Player {player+1} pushes with the dealer. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} pushes with the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
                 elif shoe.players[player].getValue() > shoe.dealer.getValue() and shoe.players[player].getValue() < 22:
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
                 elif shoe.players[player].getValue() > 21:
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()} Their balance is now {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
         
         while True:
             if enough:
                 exit = input('Enter any character to play the next hand. \nEnter 0 to exit. ')
-                if exit and exit !='0':
-                    break
-                elif exit == '0':
-                    quit()
+                if exit != '0': break
+                else: print('Thanks for playing.'); quit()
             else:
                 print('Shoe is empty thank you for playing.')
                 quit()
