@@ -291,6 +291,7 @@ def game():
         i = 1
         shoe.deal(numplayers)
         os.system('cls')
+        toremove = []
         for hand in shoe.players:
             hand.setDoubled(False)
             hand.setBJ(False)
@@ -299,21 +300,23 @@ def game():
             while True:
                 isaNum = True
                 try: 
-                    betsize = float(input(f"What is the bet size, for player {i}? "))
+                    betsize = float(input(f"What is the bet size, for player {i}? They currently have {hand.getBalance()}. "))
+                    if betsize>hand.getBalance(): raise KeyError
                 except:
-                    print("Must input a number.")
+                    print("Must input a number. And less then the players current balance.")
                     isaNum = False
                 if isaNum:
                     break
             hand.setbs(betsize)
             i+=1
+        
         shoe.showHands()
         if shoe.dealer.getCards()[0].getVal() == 'Ace':
             if shoe.dealer.getValue() == 21:
                 dealerBlackJack = True
                 # dealer has blackjack and we do not need to run any hands
             for insuredPLay in range(len(shoe.players)):
-                if not shoe.players[player].getBJ():
+                if not shoe.players[insuredPLay].getBJ():
                     insur = ''
                     while True:
                         try:
@@ -326,7 +329,7 @@ def game():
                         except:
                             print('Answer must be "y" or "n"')
                             continue
-                    if insur == 'y': shoe.players[player].setIN(True)
+                    if insur == 'y': shoe.players[insuredPLay].setIN(True)
 
         for player in range(len(shoe.players)):
             if len(shoe.players[player].getCards())==2 and shoe.players[player].getValue()==21:
@@ -363,7 +366,7 @@ def game():
                             continue
                         if (shoe.players[player].getCards()[0].getValnum() == shoe.players[player].getCards()[1].getValnum()
                             and len(shoe.deck)>2 and len(shoe.players[player].getCards()) == 2):
-                            shoe.split(shoe.players[player], player+1) # does eveyrthing in the split function
+                            shoe.split(shoe.players[player], player+1) # do eveyrthing in the split function
                             break
                         
                     elif choice[0] == 'd':
@@ -504,7 +507,14 @@ def game():
                 elif shoe.players[player].getValue() > 21:
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
                     print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
-        
+        toremove = []
+        for player in range(len(shoe.players)):
+            if shoe.players[player].getBalance() <= 0:
+                print(f'Player {player+1} is out of money and kicked from the table.')
+                toremove.append(player)
+        for i in toremove:
+            shoe.players.pop(i)
+        numplayers-=len(toremove)
         while True:
             if enough:
                 exit = input('Enter any character to play the next hand. \nEnter 0 to exit. ')
@@ -513,6 +523,11 @@ def game():
             else:
                 print('Shoe is empty thank you for playing.')
                 quit()
+        if numplayers==0:
+            print('No more players at the table.')
+            quit()
+        
+                
     print('Not enough cards for the number of players specified thank you for playing.')
 
 game()
