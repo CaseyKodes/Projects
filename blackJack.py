@@ -167,7 +167,7 @@ class Shoe():
         print(player.getCards()[-1])
         print(f'Player has {player.getValue()} and is done since they doubled down.')
     
-    def split(self, player:Hand):
+    def split(self, player:Hand, playernum):
         # we need to split the hand into two hands
         # but they need to belong to the same user 
         # we need to make 2 new hands one from each of the cards in the hand
@@ -184,7 +184,7 @@ class Shoe():
             print(f'{hand}')
             while True:
                 try:
-                    choice = input(f'Does player want to hit, stand, split or double down?\nThey currently have {hand.getValue()}. ')
+                    choice = input(f'Does player {playernum} want to hit, stand, split or double down?\nThey currently have {hand.getValue()}. ')
                     choice = choice.lower()
                     if choice[0]!='h' and choice[0:2]!='st' and choice[0:2]!='sp' and choice[0]!='d':
                         raise KeyError
@@ -202,14 +202,14 @@ class Shoe():
                             splitTotals[i] = (hand.getValue())
                             break
                         elif hand.getValue() > 21:
-                            print(f'This split hand busts with a value of {hand.getValue()}')
+                            print(f'Player {playernum} busts split hand with: {hand.getValue()}')
                             splitTotals[i] = (hand.getValue())
                             break
                         else:
                             continue
                         
                     elif choice[0:2] == 'st':
-                        print('Players stays on this split hand with a value of: ', hand.getValue())
+                        print(f'Player {playernum} stays on split hand with: {hand.getValue()}')
                         splitTotals[i] = (hand.getValue())
                         dtoatals[i] = False
                         break
@@ -227,7 +227,7 @@ class Shoe():
 
                         if (hand.getCards()[0].getValnum() == hand.getCards()[1].getValnum()
                             and len(self.deck)>2 and len(hand.getCards()) == 2):
-                            toadd1, toadd2 = self.split(hand) # does eveyrthing in the split function
+                            toadd1, toadd2 = self.split(hand, playernum) # does eveyrthing in the split function
                             for num in toadd1:
                                 splitTotals.append(num)
                             for TF in toadd2:
@@ -239,7 +239,7 @@ class Shoe():
                         toadd = self.deck.pop(0)
                         print(toadd)
                         hand.addCard(toadd)
-                        print(f'Player dobuled down this split hand and ended with {hand.getValue()}')
+                        print(f'Player {playernum} dobuled down, split hand ended with: {hand.getValue()}')
                         splitTotals[i] = hand.getValue()
                         break
 
@@ -363,7 +363,7 @@ def game():
                             continue
                         if (shoe.players[player].getCards()[0].getValnum() == shoe.players[player].getCards()[1].getValnum()
                             and len(shoe.deck)>2 and len(shoe.players[player].getCards()) == 2):
-                            shoe.split(shoe.players[player]) # does eveyrthing in the split function
+                            shoe.split(shoe.players[player], player+1) # does eveyrthing in the split function
                             break
                         
                     elif choice[0] == 'd':
@@ -413,7 +413,9 @@ def game():
                     extrawins = 0
                     print(shoe.players[player].getSplitNums())
                     print(shoe.players[player].getDarray())
+                    i = -1
                     for num in shoe.players[player].getSplitNums():
+                        i+=1
                         if num > 21:
                             loses+=1
                             if shoe.players[player].getDarray()[i]:
@@ -453,8 +455,9 @@ def game():
                     extrawins = 0
                     print(shoe.players[player].getSplitNums())
                     print(shoe.players[player].getDarray())
-                    i = 0
+                    i = -1
                     for num in shoe.players[player].getSplitNums():
+                        i +=1
                         if num > 21:
                             loses+=1
                             if shoe.players[player].getDarray()[i]:
@@ -468,7 +471,6 @@ def game():
                                 loses +=1
                                 if shoe.players[player].getDarray()[i]:
                                     extraloses +=1
-                        i+=1
                         
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*(wins+extrawins-loses-extraloses))
                     print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance()}')
