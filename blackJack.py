@@ -83,10 +83,14 @@ class Hand():
         return self.splitAmounts
     def addSplitNum(self, amount):
         self.splitAmounts.append(amount)
+    def clearSplit(self):
+        self.splitAmounts.clear()
     def getDarray(self):
         return self.doubleArray
     def addDarray(self, boolean):
         self.doubleArray.append(boolean)
+    def clearDoubled(self):
+        self.doubleArray.clear()
 
     def getValue(self):
         value = 0
@@ -297,6 +301,8 @@ def game():
             hand.setBJ(False)
             hand.setIN(False)
             hand.setSplit(False)
+            hand.clearSplit()
+            hand.clearDoubled()
             while True:
                 isaNum = True
                 try: 
