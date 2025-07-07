@@ -29,7 +29,10 @@ def drawings():
     chosenword = ''
 
     pickline = random.randint(0,level)
-    with open (fr"\\midfile01\Departments\\Metrology MFG\\Casey Provitera\\funzies\\words{level}.txt", 'r') as file:
+    
+    # user needs to put the right path to the file here
+
+    with open (fr"\\words{level}.txt", 'r') as file:
         contents = file.readlines()
         chosenword = contents[pickline].split('\n')[0]
     found = '-'*len(chosenword)
