@@ -408,6 +408,10 @@ def game():
                 elif shoe.players[player].getBJ():
                     times = 2.5
                 else: times = 1
+                
+                if shoe.players[player].getIN():
+                    shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
+                    print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance():.2f}')
 
                 if shoe.players[player].getSplit():
                     wins = 0
@@ -429,10 +433,7 @@ def game():
                                 extrawins +=1
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*(wins+extrawins-loses-extraloses))
                     print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance():.2f}')
-
-                if shoe.players[player].getIN():
-                    shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
-                    print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance():.2f}')
+                    continue
 
                 if shoe.players[player].getBJ():
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
@@ -455,6 +456,13 @@ def game():
                 elif shoe.players[player].getBJ():
                     times = 2.5
                 else: times = 1
+
+                if shoe.players[player].getIN() and not dealerBlackJack:
+                    shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
+                    print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance():.2f}')
+                elif shoe.players[player].getIN() and dealerBlackJack:
+                    shoe.players[player].changeBalance(shoe.players[player].getbs())
+                    print(f'Player {player+1} took insurance and Won. Updated balance = {shoe.players[player].getBalance():.2f}')
 
                 if shoe.players[player].getSplit():
                     wins = 0
@@ -482,14 +490,8 @@ def game():
                         
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*(wins+extrawins-loses-extraloses))
                     print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance():.2f}')
-
-                if shoe.players[player].getIN() and not dealerBlackJack:
-                    shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
-                    print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance():.2f}')
-                elif shoe.players[player].getIN() and dealerBlackJack:
-                    shoe.players[player].changeBalance(shoe.players[player].getbs())
-                    print(f'Player {player+1} took insurance and Won. Updated balance = {shoe.players[player].getBalance():.2f}')
-
+                    continue
+                
                 if shoe.players[player].getBJ():
                     if dealerBlackJack:
                         print(f'Both {player+1} and Dealer have Black Jack so they push. Updated balance = {shoe.players[player].getBalance():.2f}')
