@@ -97,7 +97,6 @@ class Hand():
             if card.getVal() == 'Ace':
                 aces +=1
 
-        # logic for aces is wrong 
         if aces>0:
             if (value+11+aces-1) > value+aces and (value+11+aces-1)<=21:
                 return (value+11+aces-1)
@@ -254,7 +253,7 @@ class Shoe():
         print('Players have:')
         i = 1
         for hand in self.players:
-            print(f'{i} {hand}\nWith a current balance of {hand.getBalance()}')
+            print(f'{i} {hand}\nWith a current balance of {hand.getBalance():.2f}')
             i+=1
         print('Dealers top card is:')
         print(self.dealer.getCards()[0])
@@ -300,10 +299,10 @@ def game():
             while True:
                 isaNum = True
                 try: 
-                    betsize = float(input(f"What is the bet size, for player {i}? They currently have {hand.getBalance()}. "))
+                    betsize = float(input(f"What is the bet size, for player {i}? They currently have {hand.getBalance():.2f} "))
                     if betsize>hand.getBalance(): raise KeyError
                 except:
-                    print("Must input a number. And less then the players current balance.")
+                    print("Must input a number less then or equal to the player's current balance.")
                     isaNum = False
                 if isaNum:
                     break
@@ -428,20 +427,25 @@ def game():
                             if shoe.players[player].getDarray()[i]:
                                 extrawins +=1
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*(wins+extrawins-loses-extraloses))
-                    print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance()}')
-                    continue
+                    print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance():.2f}')
+
+                if shoe.players[player].getIN():
+                    shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
+                    print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance():.2f}')
 
                 if shoe.players[player].getBJ():
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} beat the dealer, with Black Jack. Updated balance = {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} beat the dealer, with Black Jack. Updated balance = {shoe.players[player].getBalance():.2f}')
                     continue
 
                 if shoe.players[player].getValue() <= 21:
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance():.2f}')
+                    continue
                 elif shoe.players[player].getValue() > 21:
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance():.2f}')
+                    continue
                 
         elif not dealerBust:
             for player in range(len(shoe.players)):
@@ -476,37 +480,40 @@ def game():
                                     extraloses +=1
                         
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*(wins+extrawins-loses-extraloses))
-                    print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance()}')
-                    continue
-
-                if shoe.players[player].getBJ():
-                    if dealerBlackJack:
-                        print(f'Both {player+1} and Dealer have Black Jack so they push. Updated balance = {shoe.players[player].getBalance()}')
-                    else:
-                        shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                        print(f'Player {player+1} beat the dealer, with Black Jack. Updated balance = {shoe.players[player].getBalance()}')
-                    continue
+                    print(f'Player {player+1} split their hand, they won {wins} times and lost {loses} times. Updated balance = {shoe.players[player].getBalance():.2f}')
 
                 if shoe.players[player].getIN() and not dealerBlackJack:
                     shoe.players[player].changeBalance(-.5*shoe.players[player].getbs())
-                    print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance()}')
-                    continue
+                    print(f'Player {player+1} took insurance and lost. Updated balance = {shoe.players[player].getBalance():.2f}')
                 elif shoe.players[player].getIN() and dealerBlackJack:
                     shoe.players[player].changeBalance(shoe.players[player].getbs())
-                    print(f'Player {player+1} took insurance and Won. Updated balance = {shoe.players[player].getBalance()}')
-                    continue
+                    print(f'Player {player+1} took insurance and Won. Updated balance = {shoe.players[player].getBalance():.2f}')
+
+                if shoe.players[player].getBJ():
+                    if dealerBlackJack:
+                        print(f'Both {player+1} and Dealer have Black Jack so they push. Updated balance = {shoe.players[player].getBalance():.2f}')
+                        continue
+                    else:
+                        shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
+                        print(f'Player {player+1} beat the dealer, with Black Jack. Updated balance = {shoe.players[player].getBalance():.2f}')
+                        continue
 
                 if shoe.players[player].getValue() < shoe.dealer.getValue():
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} lost to dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} lost to dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance():.2f}')
+                    continue
                 elif shoe.players[player].getValue() == shoe.dealer.getValue():
-                    print(f'Player {player+1} pushes with the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} pushes with the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance():.2f}')
+                    continue
                 elif shoe.players[player].getValue() > shoe.dealer.getValue() and shoe.players[player].getValue() < 22:
                     shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} beat the dealer. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance():.2f}')
+                    continue
                 elif shoe.players[player].getValue() > 21:
                     shoe.players[player].changeBalance(-1*shoe.players[player].getbs()*times)
-                    print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance()}')
+                    print(f'Player {player+1} busts. With a value of {shoe.players[player].getValue()}. Updated balance = {shoe.players[player].getBalance():.2f}')
+                    continue
+        
         toremove = []
         for player in range(len(shoe.players)):
             if shoe.players[player].getBalance() <= 0:
