@@ -6,9 +6,7 @@ The two text files are needed to make the hang man game run since that is where 
 
 Things I am working on:
 
-
 --- the Black Jack code is finished
-
 
 --- in the PokerSim code a user can simulate wild cards but they will not be able to complete gaps in straights or straight flushes also working on that.
 
