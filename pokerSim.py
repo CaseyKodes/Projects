@@ -10,29 +10,21 @@
     # use wild cards to correctly create and break ties between all hand types but straight and straight flushes 
 
 # currently we can NOT
-    #use wild cards to fill gaps in straights but they can be used to finish the outside of a straight
+    # use wild cards to fill gaps in straights but they can be used to finish the outside of a straight
 
 # working on
-    # adding in funcitonality so wilds can be hte inside cards in straights 
+    # adding in funcitonality so wilds can be the inside cards in straights 
 '''
-
-WILD CARD TROUBLES 
-if we use a new number to indicate how many wild cards a hand has but we still count the rank of those wild cards if we ever have 2 wild cards of the same rank the progrma will 
-always think we have 4 of a kind since it is counting the rank of the wild cards and saying we need the number of wild cards less in a specific rank to have that type of hand 
-then if we do not count the rank fewer straights will show up since we are removing an entire card rank from the ranks that can appear
-
-THINGS THAT ARE NICE TO KNOW ABOUT WILD CARDS 
-with wild cards if a hand has 1 they will never have 2 pair as their hand type becuase they could make a better hand by using thw wild cards in a different fashion
-
-
-HOW i THOUGHT TO DO IT BUT DID NOT WORK YET AND SO I REMOVED IT
-do not count the rank of wild cads just add to the numer of wild cards variable
-when figuring out what hand type a card has 
+when figuring out what hand rank a hand is with wilds
     if a pair hand type - subtract the number of wild cards from the number of cards needed to make the hand 
     for straights - they can be the top or bottm of a straight easy but subtracting the number of wild cards needed for a straight 
                   - but to be the middle cards in a straight is weird
     for flushes - subtract number of wild cards from how many cards are needed to make a straigth
     for straight flushes - same logic as for a straight but just seperate into the suits first
+another thing
+    if the actual value of the wild card is better for the hand than it being wild that is not always considered
+    example if a hand has 5, 6, 7, 8, 9 and 7s are wild it will currently not complete teh straight and just say the player has a pair
+    thi also boils down to just making wilds be able to fill in gaps in straights - TODO
 '''
 
 
@@ -126,7 +118,7 @@ class Hand():
     
 class Deck():
     # deck objects contain 52 cards, 4 suits, and 13 values
-    # it contains lists of hands that players has
+    # it contains lists of hands that players have
     # it keeps track of the current deck after being dealt and we can save what 
     # cards are burnt but there is no use for those yet
     # we have funcitons to deal hands to players, deal a board of shared cards, 
@@ -188,50 +180,31 @@ class Deck():
                 else:
                     self.playerHands.append(Hand([self.deck.pop(0)], numboards))
         self.numBorads = numboards
-        if numboards==1:
-            self.dealSingleBoard()
-        elif numboards==2:
-            self.dealDoubleBoard()
-        else: 
-            # dealing more than 2 boards deals them in a different way than dealing 1 or 2 boards
-            # but it would be annoying to write a function that would deal any number of boards the same way
-            # lot of work for minimaul results probably will not do
-            for i in range(numboards):
-                self.dealSingleBoard()
+        self.dealboards(numboards)
                 
-    def dealSingleBoard(self): # deals a flop turn and river
-        # want to figure out how to deal 2 boards 
-        # we would need to store them in different places 
-        boardDict = {'Flop':[], 'Turn':[], 'River':[]}
-        self.burnt.append(self.deck.pop(0))
-        for i in range(3):
-            boardDict['Flop'].append(self.deck.pop(0))
-        self.burnt.append(self.deck.pop(0))
-        boardDict['Turn'].append(self.deck.pop(0))
-        self.burnt.append(self.deck.pop(0))
-        boardDict['River'].append(self.deck.pop(0))
-        self.boardList.append([boardDict['Flop'] + boardDict['Turn'] + boardDict['River']])
-    
-    def dealDoubleBoard(self):
-        # same logic as for single board but we need to do flop flopr, turn turn, river river
-        boardDict1 = {'Flop':[], 'Turn':[], 'River':[]}
-        boardDict2 = {'Flop':[], 'Turn':[], 'River':[]}
-        self.burnt.append(self.deck.pop(0))
-        for i in range(3):
-            boardDict1['Flop'].append(self.deck.pop(0))
-        self.burnt.append(self.deck.pop(0))
-        for i in range(3):
-            boardDict2['Flop'].append(self.deck.pop(0))
-        self.burnt.append(self.deck.pop(0))
-        boardDict1['Turn'].append(self.deck.pop(0))
-        self.burnt.append(self.deck.pop(0))
-        boardDict2['Turn'].append(self.deck.pop(0))
-        self.burnt.append(self.deck.pop(0))
-        boardDict1['River'].append(self.deck.pop(0))
-        self.burnt.append(self.deck.pop(0))
-        boardDict2['River'].append(self.deck.pop(0))
-        self.boardList.append([boardDict1['Flop'] + boardDict1['Turn'] + boardDict1['River']])
-        self.boardList.append([boardDict2['Flop'] + boardDict2['Turn'] + boardDict2['River']])
+    def dealboards(self, numB):
+        flops = []
+        turns = []
+        rivers = []
+        for i in range(numB):
+            toaddF = []
+            self.burnt.append(self.deck.pop(0))
+            for card in range(3):
+                toaddF.append(self.deck.pop(0))
+            flops.append(toaddF)
+        for i in range(numB):
+            self.burnt.append(self.deck.pop(0))
+            toaddT = []
+            toaddT.append(self.deck.pop(0))
+            turns.append(toaddT)
+        for i in range(numB):
+            self.burnt.append(self.deck.pop(0))
+            toaddR = []
+            toaddR.append(self.deck.pop(0))
+            rivers.append(toaddR)
+        for board in range(numB):
+            b = [flops[board]+turns[board]+rivers[board]]
+            self.boardList.append(b)    
         
     def calcHandRanks(self): # figure out which hand has the best hand 
         # need to look at each hand in player hands and every card on the board
@@ -263,8 +236,8 @@ class Deck():
                     # if we are here we know we have a flush now we want to check if those cards are in order 
                     # looking for straight flush
                     for key, value in suitcount.items():
-                        rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
-                         '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                        rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, 
+                                    '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                         for card in value:
                             if card.getVal() in self.dead or card.getVal() in self.wild:
                                 continue
@@ -276,6 +249,7 @@ class Deck():
                         straightLenghth = 5-numwilds # length of straight
                         for starter in range(len(straightlist)-straightLenghth):
                             if all(straightlist[starter:starter+straightLenghth]):
+                                # here we know we have a staright flush with cards that all connected before the wilds were used
                                 if self.hr.index(hand.getRank(board)) < self.hr.index('Straight Flush'):
                                     hand.setRank('Straight Flush', board)
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Flush'):
@@ -285,8 +259,8 @@ class Deck():
                 # this works to find natural straights and straights that are 5-the number of wilds in a hand 
                 # where the wilds are then used to be the finishing cards on the outside of the straight
                 # TODO it does not work for using wilds to fill gaps so I think i just make a functionality for that
-                rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
-                             '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, 
+                             '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                 if len(self.boardList) > 0:
                     for b in self.boardList[board]:
                         for card in b:
@@ -307,13 +281,6 @@ class Deck():
                     if all(straightlist[starter:starter+straightLenghth]):
                         if self.hr.index(hand.getRank(board)) < self.hr.index('Straight'):
                             hand.setRank('Straight', board)
-
-                # after wilds 
-                # this is so wilds are not counted ontop of themselves
-                if numwilds>0:
-                    for key in rankcount.keys():
-                        if key in self.wild:
-                            rankcount[key] = 0
 
                 # determining based off the number of instances of that card value what type of hand a player has
                 # this is for pairs two pairs three of a kind full house and four of a kind
@@ -374,13 +341,15 @@ class Deck():
                         # we  then need to call the tiebreak function 
                         winnershand.append(playersHand)
                         winnershand = self.tiebreak(winnershand, winnerslevel, boardIndex)
-            toreturn += f'Winning hand rank on Board number {boardIndex+1} was {winnerslevel} with a board of: \n'
+            toreturn += f'Winning hand had rank of {winnerslevel} '
             if len(self.boardList)>0:
-                for b in self.boardList[boardIndex]:
-                    for card in b:
-                        toreturn += card.getStr()
-                        if card != b[-1]: toreturn +='& '
-            toreturn += '\nAnd a hand of: \n'
+                toreturn += f'on Board number {boardIndex+1} and board of: \n'
+                if len(self.boardList)>0:
+                    for b in self.boardList[boardIndex]:
+                        for card in b:
+                            toreturn += card.getStr()
+                            if card != b[-1]: toreturn +='& '
+            toreturn += '\nWith a hand of: \n'
             for hand in winnershand:
                 for card in hand.getCards():
                     toreturn += card.getStr()
@@ -432,8 +401,8 @@ class Deck():
         counts2.reverse()
 
         # this uses the wilds in a hand to make that hand better for pairs
-        # it is repeat code I want to make it better not sure how
-        if level != 'Straight' and level != 'Flush' and level != 'Straight Flush':
+        # only doing for pair type hands since for the ther types we only need 1 of a card value
+        if level != 'Straight' and level != 'Flush' and level != 'Straight Flush': 
             maximum = 0
             maxIndex = 0
             for index in range(len(counts1)):
@@ -796,24 +765,20 @@ class Deck():
                                 # we can actually jut save the highest card rank in the straight flush 
                                 if wilds[hand]>0: 
                                 # if we have wilds we check to see if we can use them as the 
-                                #high card in the staright if we can the index of the top card in the straight should go down
+                                # high card in the staright if we can the index of the top card in the straight should go down
                                     for i in range(wilds[hand],0,-1):
                                         if cardSpot-i>=0 and cardSpot-i<cardSpot:
                                             cardSpot = cardSpot-i
                                 topcard.append(cardSpot)
                                 break
-                    if len(topcard)<1:
-                        topcard.append(999999)
+
                     tocompare[hand] = min(topcard)
                 if tocompare[0] == tocompare[-1]:
-                    print('same')
                     return hands
                 elif tocompare[0] < tocompare[-1]:
-                    print('first')
                     hands.pop(-1)
                     return hands
                 elif tocompare[0] > tocompare[-1]:
-                    print('last')
                     while len(hands)>1:
                         hands.pop(0)
                     return hands
@@ -834,7 +799,6 @@ class Deck():
                                     hands.pop(-1)
                                     return hands
                 pass
-                
         return hands
 
 def handelInput(L:list): # just makes sure all the values in the list are actual card values
@@ -916,6 +880,12 @@ def game():
         except:
             print("Must input a number.")
             continue
+        if (numplayers*numcards + 8*numboards<= 52*numdecks):
+            break
+        else:
+            print(f'There are not enough cards in {numdecks} deck(s) for that to work enter different numbers.')
+
+    while True:
         try:
             dead = input('Are there any dead cards? Seperate the values with spaces. ')
             if len(dead)>0:
@@ -951,11 +921,9 @@ def game():
             if printStyle != 's' and printStyle != 'n':
                 raise KeyError
         except:
-            print('Enter S for simulation or P for play or N for no print.')
-        if (numplayers*numcards + 8*numboards<= 52*numdecks):
-            break
-        else:
-            print(f'There are not enough cards in {numdecks} deck for that to work enter different numbers.')
+            print('Enter S for simulation or N for no print.')
+            continue
+        break
 
     tothanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                 , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
@@ -964,7 +932,7 @@ def game():
     
     con = 'yes'
     i = 0
-    while con != 'n':
+    while con[0] != 'n':
         i+=1
         # simulating a round of poker
         for handnum in range(handsAtaTime):
@@ -987,13 +955,10 @@ def game():
             if printStyle == 's':
                 print(f'Round {i}')
                 simPrint(org)
-            elif printStyle == 'n':
-                pass
 
         con = input('Do you want to continue? Y/N ')
         con = con.lower()
 
     printStats(tothanddict, winninghanddict)
-    
 
 game()

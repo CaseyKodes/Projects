@@ -282,6 +282,7 @@ def game():
             continue
         if (1+numplayers)*2<=numdecks*52:
             break
+        
     shoe = Shoe(numdecks, startingB)
     shoe.shuffle()
     enough = True
