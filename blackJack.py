@@ -424,8 +424,6 @@ def game():
                     loses = 0
                     extraloses = 0
                     extrawins = 0
-                    print(shoe.players[player].getSplitNums())
-                    print(shoe.players[player].getDarray())
                     i = -1
                     for num in shoe.players[player].getSplitNums():
                         i+=1
@@ -475,8 +473,6 @@ def game():
                     loses = 0
                     extraloses = 0
                     extrawins = 0
-                    print(shoe.players[player].getSplitNums())
-                    print(shoe.players[player].getDarray())
                     i = -1
                     for num in shoe.players[player].getSplitNums():
                         i +=1
