@@ -7,36 +7,15 @@
     # we can calculate the rank of each players hand on each board
     # break ties between players if they have te same hand rank
     # have dead cards
-    # use wild cards to correctly create and break ties between all hand types but straight and straight flushes 
-
-# currently we can NOT
-    # use wild cards to fill gaps in straights but they can be used to finish the outside of a straight
-
-# working on
-    # adding in funcitonality so wilds can be the inside cards in straights 
-'''
-when figuring out what hand rank a hand is with wilds
-    if a pair hand type - subtract the number of wild cards from the number of cards needed to make the hand 
-    for straights - they can be the top or bottm of a straight easy but subtracting the number of wild cards needed for a straight 
-                  - but to be the middle cards in a straight is weird
-    for flushes - subtract number of wild cards from how many cards are needed to make a straigth
-    for straight flushes - same logic as for a straight but just seperate into the suits first
-another thing
-    if the actual value of the wild card is better for the hand than it being wild that is not always considered
-    example if a hand has 5, 6, 7, 8, 9 and 7s are wild it will currently not complete teh straight and just say the player has a pair
-    thi also boils down to just making wilds be able to fill in gaps in straights - TODO
-'''
-
+    # use wild cards to correctly create and break ties between all hand types 
 
 import random as r
 
 class Rankings(): # basically just a place to hold these arrays which tell us the ordering of hands 
     HandValueOrder = ['High Card', 'Pair', 'Two Pair', 'Three of a kind', 'Straight', 'Flush', 'Full House', 'Four of a kind', 'Straight Flush', 'Five of a kind']
     CardValueOrder = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
-    def getCrank():
-        return Rankings.CardValueOrder
-    def getHrank():
-        return Rankings.HandValueOrder
+    def getCrank(): return Rankings.CardValueOrder
+    def getHrank(): return Rankings.HandValueOrder
 
 class Card():
     # card objects have a value and suit which are the defining attributes 
@@ -246,10 +225,12 @@ class Deck():
                         straightlist.append(rankcount['Ace'])
                         for value in rankcount.values():
                             straightlist.append(value)
-                        straightLenghth = 5-numwilds # length of straight
-                        for starter in range(len(straightlist)-straightLenghth):
-                            if all(straightlist[starter:starter+straightLenghth]):
-                                # here we know we have a staright flush with cards that all connected before the wilds were used
+                        TruestraightLength = 5 
+                        for beg in range(len(straightlist)-TruestraightLength):
+                            gaps = 0
+                            for i in range(TruestraightLength):
+                                if not straightlist[beg+i]: gaps+=1
+                            if gaps<=numwilds:
                                 if self.hr.index(hand.getRank(board)) < self.hr.index('Straight Flush'):
                                     hand.setRank('Straight Flush', board)
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Flush'):
@@ -276,9 +257,18 @@ class Deck():
                 straightlist.append(rankcount['Ace'])
                 for value in rankcount.values():
                     straightlist.append(value)
-                straightLenghth = 5-numwilds # x = length of straight
-                for starter in range(len(straightlist)-straightLenghth):
-                    if all(straightlist[starter:starter+straightLenghth]):
+
+                # this works by taking sections of 5 out of the array of numbers
+                # if there are 0s in that gaps in increased 
+                # we then check to see if the number of gaps is less than or equal to the number of wilds
+                # if it is we know we can fill all the gaps with wilds so we have a straight
+                TruestraightLength = 5 
+                for beg in range(len(straightlist)-TruestraightLength):
+                    if self.hr.index(hand.getRank(board))>self.hr.index('Straight'): break
+                    gaps = 0
+                    for i in range(TruestraightLength):
+                        if not straightlist[beg+i]: gaps+=1
+                    if gaps<=numwilds:
                         if self.hr.index(hand.getRank(board)) < self.hr.index('Straight'):
                             hand.setRank('Straight', board)
 
@@ -489,6 +479,16 @@ class Deck():
                                                     elif highspot1<highspot2:
                                                         hands.pop(-1)
                                                         return hands
+                                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
+                                    if len(counts1)>len(counts2):
+                                        hands.pop(-1)
+                                        return hands
+                                    elif len(counts1)<len(counts2):
+                                        while len(hands)>1:
+                                            hands.pop(0)
+                                        return hands
+                                    else:
+                                        return hands
                                 elif spot1>spot2:
                                     while len(hands)>1:
                                         hands.pop(0)
@@ -528,6 +528,16 @@ class Deck():
                                                                         elif high1<high2:
                                                                             hands.pop(-1)
                                                                             return hands
+                                                        # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
+                                                        if len(counts1)>len(counts2):
+                                                            hands.pop(-1)
+                                                            return hands
+                                                        elif len(counts1)<len(counts2):
+                                                            while len(hands)>1:
+                                                                hands.pop(0)
+                                                            return hands
+                                                        else:
+                                                            return hands
                                                     elif pairspot1>pairspot2:
                                                         while len(hands)>1:
                                                             hands.pop(0)
@@ -573,6 +583,16 @@ class Deck():
                                                     elif highspot1<highspot2:
                                                         hands.pop(-1)
                                                         return hands
+                                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
+                                    if len(counts1)>len(counts2):
+                                        hands.pop(-1)
+                                        return hands
+                                    elif len(counts1)<len(counts2):
+                                        while len(hands)>1:
+                                            hands.pop(0)
+                                        return hands
+                                    else:
+                                        return hands
                                 elif spot1>spot2:
                                     while len(hands)>1:
                                         hands.pop(0)
@@ -588,22 +608,21 @@ class Deck():
                 # even though we could be compairing more than 2 hands we know that they first 2 hands will have exact
                 # same ranking since they would have needed to tie to get back into here with more than 2 hands so we 
                 # only need to look at the first and last hands to accuratly judge them all 
-                topnums = [0,0]  
+                topnums = [-1,-1] # start at -1 so if we need to test it will be easier to see when it is not overridden  
                 uses = [counts1, counts2]
                 wuse = [0,-1]
+
+                # updated logic now works to break ties 
+                # straights can use wilds in the middle or on the outsides or not at all and it still works
                 for hand in range(2):
                     straightlist = [num for num in uses[hand]]
                     straightlist.append(straightlist[0])
-                    for cardSpot in range(len(straightlist)-5+wilds[wuse[hand]]):
-                        if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5-wilds[wuse[hand]])): 
-                            # now we just put the highest card of the straight in some other place to check later
+                    for cardSpot in range(len(straightlist)-5):
+                        gaps = 0
+                        for i in range(5):
+                            if straightlist[cardSpot+i]==0:gaps+=1
+                        if gaps<=wilds[wuse[hand]]: 
                             topnums[hand] = cardSpot
-                            if wilds[wuse[hand]]>0: 
-                                # if we have wilds we check to see if we can use them as the 
-                                #high card in the staright if we can the index of the top card in the straight should go down
-                                for i in range(wilds[wuse[hand]],0,-1):
-                                    if topnums[hand]-i>=0 and topnums[hand]-i<topnums[hand]:
-                                        topnums[hand] = topnums[hand]-i
                             break
 
                 if topnums[0] == topnums[-1]:
@@ -695,13 +714,7 @@ class Deck():
                 for spot1 in range(len(counts1)):
                     if counts1[spot1] == 4:
                         for spot2 in range(len(counts2)):
-
-
-                            if counts2[spot2] == 4: # error here that does not show up often  TODO
-                                # only happens when wild cards are introduced
-                                # now is not showing up?
-
-
+                            if counts2[spot2] == 4: 
                                 if spot1==spot2:
                                     # now we look for the highest card 
                                     counts1.pop(spot1)
@@ -721,6 +734,16 @@ class Deck():
                                                     elif highspot1<highspot2:
                                                         hands.pop(-1)
                                                         return hands
+                                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
+                                    if len(counts1)>len(counts2):
+                                        hands.pop(-1)
+                                        return hands
+                                    elif len(counts1)<len(counts2):
+                                        while len(hands)>1:
+                                            hands.pop(0)
+                                        return hands
+                                    else:
+                                        return hands
                                 elif spot1>spot2:
                                     while len(hands)>1:
                                         hands.pop(0)
@@ -759,29 +782,39 @@ class Deck():
                         for value in rankcount.values():
                             straightlist.append(value)
                         straightlist.reverse()
-                        for cardSpot in range(len(straightlist)-5+wilds[hand]):
-                            if all(straightlist[x]!=0 for x in range(cardSpot, cardSpot+5-wilds[hand])):
-                                # we found a straight flush 
-                                # we can actually jut save the highest card rank in the straight flush 
-                                if wilds[hand]>0: 
-                                # if we have wilds we check to see if we can use them as the 
-                                # high card in the staright if we can the index of the top card in the straight should go down
-                                    for i in range(wilds[hand],0,-1):
-                                        if cardSpot-i>=0 and cardSpot-i<cardSpot:
-                                            cardSpot = cardSpot-i
+                        for cardSpot in range(len(straightlist)-5):
+                            gaps = 0
+                            for i in range(5):
+                                if straightlist[cardSpot+i]==0:gaps+=1
+                            if gaps<=wilds[hand]: 
                                 topcard.append(cardSpot)
-                                break
-
+                    if len(topcard)<1:topcard.append(99999)
                     tocompare[hand] = min(topcard)
+
+                '''print()
+                print(tocompare)
+                print('board')
+                for card in self.boardList[boardIndex]:
+                    for c in card:
+                        print(c)
+                for hand in hands:
+                    print('hand:')
+                    for card in hand.getCards():
+                        print(card)'''
+
                 if tocompare[0] == tocompare[-1]:
+                    print('same')
                     return hands
                 elif tocompare[0] < tocompare[-1]:
                     hands.pop(-1)
+                    print('first')
                     return hands
                 elif tocompare[0] > tocompare[-1]:
                     while len(hands)>1:
                         hands.pop(0)
+                    print('last')
                     return hands
+                
                 pass
             case 'Five of a kind':
                 #print('case Five of a kind') 
@@ -841,7 +874,7 @@ def printStats(tot:dict, win:dict):
     #print(f'Total number of winning hands {sum(win.values())}')
     print(f'Total number of each type of hand\n{tot}')
     print(f'Number of times each type of hand won a round\n{win}')
-    print(f'The percent of a that the hand being this rank alone is enough to win. (Tie breakers not needed)')
+    print(f'The percent of a time that the hand being this rank alone is enough to win.')
     toprint = ''
     for key, value in percentdict.items():
         toprint += (f'{key}: {value:.3f} ')
@@ -932,7 +965,7 @@ def game():
     
     con = 'yes'
     i = 0
-    while con[0] != 'n':
+    while con != 'n':
         i+=1
         # simulating a round of poker
         for handnum in range(handsAtaTime):
@@ -954,6 +987,7 @@ def game():
 
             if printStyle == 's':
                 print(f'Round {i}')
+                i+=1
                 simPrint(org)
 
         con = input('Do you want to continue? Y/N ')
