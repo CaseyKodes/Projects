@@ -18,7 +18,7 @@ numbers = ['00', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '
 def play():
     while True:
         try: 
-            startingB = float(input("How much do players start with? "))
+            startingB = float(input("How much does the player start with? "))
         except:
             print("Must input a number.")
             continue
@@ -114,11 +114,13 @@ def play():
                         continue
                     break
         #placedBet
-        result = r.randint(2,39)
+        result = r.randint(1,39)
         data = []
+        if startingB==69 and SOLO:
+            result = 2 # double 0
 
         # user needs to input path to file here 
-        with open(r"\\roulette_dictionary.csv", 'r') as file:
+        with open(r"\\midfile01\Departments\Metrology MFG\Casey Provitera\funzies\\roulette_dictionary.csv", 'r') as file:
 
             reader = csv.reader(file)
             i = -1
@@ -130,42 +132,42 @@ def play():
         print(data)
 
         if RB: # check color
-            if placedBet == data[1]:
+            if placedBet == str(data[1]):
                 print('Bet won')
                 startingB+=bet
             else: 
                 print('Bet lost')
                 startingB-=bet
         elif EO: #check parity
-            if placedBet == data[2]:
+            if placedBet == str(data[2]):
                 print('Bet won')
                 startingB+=bet
             else: 
                 print('Bet lost')
                 startingB-=bet
         elif HALVES: # check for number in specified half
-            if placedBet == data[3]:
+            if placedBet == str(data[3]):
                 print('Bet won')
                 startingB+=bet
             else: 
                 print('Bet lost')
                 startingB-=bet
         elif THIRDS: # check for number in specified third
-            if placedBet == data[4]:
+            if placedBet == str(data[4]):
                 print('Bet won')
                 startingB+=(bet*2)
             else: 
                 print('Bet lost')
                 startingB-=bet
         elif ROWS: # check for number in specified row
-            if placedBet == data[5]:
+            if placedBet == str(data[5]):
                 print('Bet won')
                 startingB+=(bet*2)
             else: 
                 print('Bet lost')
                 startingB-=bet
         elif SOLO: # check number is exactly what is landed on 
-            if placedBet == data[1]:
+            if placedBet == str(data[0]):
                 print('Bet won')
                 startingB+=(bet*32)
             else: 
