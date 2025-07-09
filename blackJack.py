@@ -37,9 +37,10 @@ class Hand():
         self.doubled = False
         self.insure = False
         self.split = False
+        self.bj = False
+        self.even = False
         self.splitAmounts = list()
         self.doubleArray = list()
-        self.bj = False
         for card in cards:
             self.cards.append(card)
     def getCards(self):
@@ -75,6 +76,10 @@ class Hand():
         return self.insure
     def setIN(self, boolean):
         self.insure = boolean
+    def getEven(self):
+        return self.even
+    def setEven(self, boolean):
+        self.even = boolean
     def getSplit(self):
         return self.split
     def setSplit(self, boolean):
@@ -301,6 +306,7 @@ def game():
             hand.setBJ(False)
             hand.setIN(False)
             hand.setSplit(False)
+            hand.setEven(False)
             hand.clearSplit()
             hand.clearDoubled()
             while True:
@@ -321,7 +327,7 @@ def game():
             dealerBlackJack = True
         if shoe.dealer.getCards()[0].getVal() == 'Ace':
             for insuredPLay in range(len(shoe.players)):
-                if not shoe.players[insuredPLay].getBJ():
+                if not shoe.players[insuredPLay].getValue() == 21:
                     insur = ''
                     while True:
                         try:
@@ -335,6 +341,21 @@ def game():
                             print('Answer must be "y" or "n"')
                             continue
                     if insur == 'y': shoe.players[insuredPLay].setIN(True)
+                else:
+                    evenMon = ''
+                    while True:
+                        try:
+                            evenMon = input(f'Does {insuredPLay+1} with Black Jack want to take even money? ')
+                            evenMon = insur.lower()
+                            evenMon = insur[0]
+                            if insur=='y' or insur=='n':
+                                break
+                            else: raise KeyError
+                        except:
+                            print('Answer must be "y" or "n"')
+                            continue
+                    if evenMon == 'y': shoe.players[insuredPLay].setEven(True)
+
 
         for player in range(len(shoe.players)):
             if len(shoe.players[player].getCards())==2 and shoe.players[player].getValue()==21:
@@ -412,6 +433,8 @@ def game():
                     times = 2
                 elif shoe.players[player].getBJ():
                     times = 2.5
+                    if shoe.players[player].getEven():
+                        times = 1
                 else: times = 1
                 
                 if shoe.players[player].getIN():
@@ -458,6 +481,8 @@ def game():
                     times = 2
                 elif shoe.players[player].getBJ():
                     times = 2.5
+                    if shoe.players[player].getEven():
+                        times = 1
                 else: times = 1
 
                 if shoe.players[player].getIN() and not dealerBlackJack:
@@ -494,8 +519,13 @@ def game():
                     continue
                 
                 if shoe.players[player].getBJ():
-                    if dealerBlackJack:
-                        print(f'Both {player+1} and Dealer have Black Jack so they push. Updated balance = {shoe.players[player].getBalance():.2f}')
+                    if shoe.players[player].getEven():
+                        shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
+                        print(f'Player {player+1} took even money with Black Jack. Updated balance = {shoe.players[player].getBalance():.2f}')
+                        continue
+                    if dealerBlackJack and not shoe.players[player].getEven():
+                        shoe.players[player].changeBalance(shoe.players[player].getbs()*-1)
+                        print(f'Both {player+1} and Dealer have Black Jack, player did not take even money. Updated balance = {shoe.players[player].getBalance():.2f}')
                         continue
                     else:
                         shoe.players[player].changeBalance(shoe.players[player].getbs()*times)
