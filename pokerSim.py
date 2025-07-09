@@ -1,13 +1,13 @@
-# trying to make a poker simulator 
+# Poker simulator
  
-# currently we can 
-    # deal hands to any number of players so long as we have enough cards
-    # the hands can be any size as long as we have enough cards 
-    # we can deal any number of boards of 5 cards
+# things that are possible
+    # as long as there are enough cards in the deck
+        # deal hands to any number of players 
+        # the hands can be any size 
+        # we can deal any number of boards of 5 cards (3 flop, 1 turn, 1 river)
     # we can calculate the rank of each players hand on each board
-    # break ties between players if they have te same hand rank
-    # have dead cards
-    # use wild cards to correctly create and break ties between all hand types 
+    # break ties between players if they have the same hand rank
+    # have dead and or wild cards
 
 import random as r
 
@@ -769,50 +769,34 @@ class Deck():
                     maybeadd = []
                     for numSuited in suitcount.values():
                         if len(numSuited)>4-wilds[hand]:
-                            maybeadd.append(numSuited[0:top])
+                            maybeadd.append(numSuited)
                     # now for every list of cards that makes a flush we need to see if there is a stright in them
                     topcard = []
                     for flush in maybeadd:
                         rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
                          '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
-                        for card in fullHand[hand]:
+                        for card in flush:
                             rankcount[card.getVal()]+=1
                         straightlist = []
                         straightlist.append(rankcount['Ace'])
                         for value in rankcount.values():
                             straightlist.append(value)
                         straightlist.reverse()
-                        for cardSpot in range(len(straightlist)-5):
+                        for cardSpot in range(len(straightlist)-4):
                             gaps = 0
                             for i in range(5):
                                 if straightlist[cardSpot+i]==0:gaps+=1
                             if gaps<=wilds[hand]: 
                                 topcard.append(cardSpot)
-                    if len(topcard)<1:topcard.append(99999)
                     tocompare[hand] = min(topcard)
-
-                '''print()
-                print(tocompare)
-                print('board')
-                for card in self.boardList[boardIndex]:
-                    for c in card:
-                        print(c)
-                for hand in hands:
-                    print('hand:')
-                    for card in hand.getCards():
-                        print(card)'''
-
                 if tocompare[0] == tocompare[-1]:
-                    print('same')
                     return hands
                 elif tocompare[0] < tocompare[-1]:
                     hands.pop(-1)
-                    print('first')
                     return hands
                 elif tocompare[0] > tocompare[-1]:
                     while len(hands)>1:
                         hands.pop(0)
-                    print('last')
                     return hands
                 
                 pass
@@ -868,10 +852,7 @@ def printStats(tot:dict, win:dict):
             percentdict[key] = (win[key]/tot[key])*100
         except ZeroDivisionError:
             print(f"Hand type -{key}- did not occur.")
-
-    # if we want to see some stats on the hands 
-    #print(f'Total number of hands {sum(tot.values())}')
-    #print(f'Total number of winning hands {sum(win.values())}')
+            
     print(f'Total number of each type of hand\n{tot}')
     print(f'Number of times each type of hand won a round\n{win}')
     print(f'The percent of a time that the hand being this rank alone is enough to win.')
@@ -891,72 +872,6 @@ def game():
     numcards = 2
     handsAtaTime = 1
     printStyle = 's'
-    while True:
-        # getting user input
-        try: 
-            numdecks = int(input("How many decks are we playing with? "))
-        except:
-            print("Must input a number.")
-            continue
-        try:
-            numboards = int(input('How many boards should be played? '))
-        except:
-            print("Must input a number.")
-            continue
-        try:
-            numplayers = int(input('How many players should there be? '))
-        except:
-            print("Must input a number.")
-            continue
-        try:
-            numcards = int(input('How many cards should each player get? '))
-        except:
-            print("Must input a number.")
-            continue
-        if (numplayers*numcards + 8*numboards<= 52*numdecks):
-            break
-        else:
-            print(f'There are not enough cards in {numdecks} deck(s) for that to work enter different numbers.')
-
-    while True:
-        try:
-            dead = input('Are there any dead cards? Seperate the values with spaces. ')
-            if len(dead)>0:
-                dead = dead.split(' ')
-                dead = [item.lower() for item in dead]
-                dead = handelInput(dead)
-                for i in range(len(dead)):
-                    if (dead[i] not in Rankings.getCrank()):
-                        raise KeyError
-        except:
-            print("Inproper input for dead cards.")
-            continue
-        try:
-            wild = input('Are there any wild cards? Seperate the values with spaces. ')
-            if len(wild):
-                wild = wild.split(' ')
-                wild = [item.lower() for item in wild]
-                wild = handelInput(wild)
-                for i in range(len(wild)):
-                    if (wild[i] not in Rankings.getCrank()):
-                        raise KeyError
-        except:
-            print("Inproper input for wild cards.")
-            continue
-        try:
-            handsAtaTime = int(input('How many hands should be dealt at a time? '))
-        except:
-            print("Must input a number.")
-            continue
-        try: 
-            printStyle = input('How should the hand be shown? As a simulation or no print? ')
-            printStyle = printStyle.lower()
-            if printStyle != 's' and printStyle != 'n':
-                raise KeyError
-        except:
-            print('Enter S for simulation or N for no print.')
-            continue
-        break
 
     tothanddict = {'High Card':0, 'Pair':0, 'Two Pair':0, 'Three of a kind':0, 'Straight':0
                 , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
@@ -965,10 +880,82 @@ def game():
     
     con = 'yes'
     i = 0
+    changeDets = 'y'
     while con != 'n':
-        i+=1
+        if changeDets == 'y':
+            while True:
+                # getting user input
+                '''try: 
+                    numdecks = int(input("How many decks are we playing with? "))
+                except:
+                    print("Must input a number.")
+                    continue'''
+                try:
+                    numboards = int(input('How many boards should be played? '))
+                except:
+                    print("Must input a number.")
+                    continue
+                try:
+                    numplayers = int(input('How many players should there be? '))
+                except:
+                    print("Must input a number.")
+                    continue
+                try:
+                    numcards = int(input('How many cards should each player get? '))
+                except:
+                    print("Must input a number.")
+                    continue
+                if (numplayers*numcards + 8*numboards<= 52*numdecks):
+                    break
+                else:
+                    print(f'There are not enough cards in {numdecks} deck(s) for that to work enter different numbers.')
+
+            while True:
+                try:
+                    dead = input('Are there any dead cards? Seperate the values with spaces. ')
+                    if len(dead)>0:
+                        dead = dead.split(' ')
+                        dead = [item.lower() for item in dead]
+                        dead = handelInput(dead)
+                        for i in range(len(dead)):
+                            if (dead[i] not in Rankings.getCrank()):
+                                raise KeyError
+                except:
+                    print("Inproper input for dead cards.")
+                    continue
+                try:
+                    wild = input('Are there any wild cards? Seperate the values with spaces. ')
+                    if len(wild):
+                        wild = wild.split(' ')
+                        wild = [item.lower() for item in wild]
+                        wild = handelInput(wild)
+                        for i in range(len(wild)):
+                            if (wild[i] not in Rankings.getCrank()):
+                                raise KeyError
+                except:
+                    print("Inproper input for wild cards.")
+                    continue
+                break
+
+            while True:
+                try:
+                    handsAtaTime = int(input('How many hands should be dealt at a time? '))
+                except:
+                    print("Must input a number.")
+                    continue
+                try: 
+                    printStyle = input('How should the hand be shown? As a simulation or no print? ')
+                    printStyle = printStyle.lower()
+                    if printStyle != 's' and printStyle != 'n':
+                        raise KeyError
+                except:
+                    print('Enter S for simulation or N for no print.')
+                    continue
+                break
+
         # simulating a round of poker
         for handnum in range(handsAtaTime):
+            i+=1
             org = Deck(wild, dead, numdecks)
             org.shuffle()
             org.deal(numplayers,numcards,numboards)
@@ -987,9 +974,10 @@ def game():
 
             if printStyle == 's':
                 print(f'Round {i}')
-                i+=1
                 simPrint(org)
 
+        changeDets = input('Do you want to change the format of the hands? Y/N ')
+        changeDets = changeDets.lower()
         con = input('Do you want to continue? Y/N ')
         con = con.lower()
 
