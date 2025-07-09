@@ -319,23 +319,22 @@ def game():
         shoe.showHands()
         if shoe.dealer.getValue() == 21:
             dealerBlackJack = True
-            if shoe.dealer.getCards()[0].getVal() == 'Ace':
-            # dealer has blackjack and we do not need to run any hands
-                for insuredPLay in range(len(shoe.players)):
-                    if not shoe.players[insuredPLay].getBJ():
-                        insur = ''
-                        while True:
-                            try:
-                                insur = input(f'Does {insuredPLay+1} want to take insurance? ')
-                                insur = insur.lower()
-                                insur = insur[0]
-                                if insur=='y' or insur=='n':
-                                    break
-                                else: raise KeyError
-                            except:
-                                print('Answer must be "y" or "n"')
-                                continue
-                        if insur == 'y': shoe.players[insuredPLay].setIN(True)
+        if shoe.dealer.getCards()[0].getVal() == 'Ace':
+            for insuredPLay in range(len(shoe.players)):
+                if not shoe.players[insuredPLay].getBJ():
+                    insur = ''
+                    while True:
+                        try:
+                            insur = input(f'Does {insuredPLay+1} want to take insurance? ')
+                            insur = insur.lower()
+                            insur = insur[0]
+                            if insur=='y' or insur=='n':
+                                break
+                            else: raise KeyError
+                        except:
+                            print('Answer must be "y" or "n"')
+                            continue
+                    if insur == 'y': shoe.players[insuredPLay].setIN(True)
 
         for player in range(len(shoe.players)):
             if len(shoe.players[player].getCards())==2 and shoe.players[player].getValue()==21:
