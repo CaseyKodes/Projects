@@ -423,45 +423,56 @@ class Deck():
             top = 5
         else:
             top = min(len(fullHand[0]), len(fullHand[-1])) 
-            # we set the top to the minimum amount of cards then we know that if we check the min amount of cards in both we can say the one that has more cards wins
+            # we set the top to the minimum amount of cards
+            # then we know that if we check the min amount of cards in both 
+            # we can say the one that has more cards wins
         
         # one case for each hand type
+        ties = 0
         match level:
             case 'High Card':
                 #print('case High Card solved') 
-                ties = 0
-                for highspot1 in range(len(counts1)):
-                    if counts1[highspot1]!=0:
-                        for highspot2 in range(len(counts2)):
-                            if counts2[highspot2]!=0:
-                                if highspot1==highspot2:
-                                    # come back to this case since we need to keep track 
-                                    # that we have looked at another high card
-                                    ties+=1
-                                    if ties==5:
-                                        return hands
-                                    continue
-                                elif highspot1>highspot2:
-                                    while len(hands)>1:
-                                        hands.pop(0)
-                                elif highspot1<highspot2:
-                                    hands.pop(-1)
-                                    return hands
+                for chance in range(5):
+                    try:
+                        spot1 = counts1.index(1)
+                        spot2 = counts2.index(1)
+                    except ValueError as e:
+                        # one of the hands does not have 5 active cards
+                        if len(fullHand[0])>len(fullHand[-1]):
+                            hands.pop(-1)
+                            return hands
+                        elif len(fullHand[0])<len(fullHand[-1]):
+                            while len(hands)>1:
+                                hands.pop(0)
+                            return hands
+                        else:
+                            return hands
+                    if spot1==spot2:
+                        counts1.pop(spot1)
+                        counts2.pop(spot2)
+                        continue
+                    elif spot1<spot2:
+                        hands.pop(-1)
+                        return hands
+                    elif spot1>spot2:
+                        while len(hands)>1:
+                            hands.pop(0)
+                        return hands
                 pass
-            case 'Pair':
-                #print('case Pair solved')
-                # need to find the cards that the players have pairs of and compare those first
-                    # this works if one player wins directly from the pair they have
-                    # but if players have the same pair we then need to check their highest cards that are not paired
-                    # also need to keep in mind that we only want to check 5 cards max
-                # what would this look like with the logic from full house
-                # we now need to keep track of how many cards we check we only want to chec k5 cards max so we need to keep track
-                # of how many high cards we look at after the pair
-                ties = 0 # number that stops us from checking more than 5 cards 
-                spot1 = counts1.index(2)
-                spot2 = counts2.index(2)
+            case 'Pair' | 'Three of a kind' | 'Four of a kind':
+                # we do this since they all use the exact same logic 
+                # only difference is what number we look for in the list
+                # and how many times we check high card to complete the hand
+
+                #print('case Two/Three/Four of a kind solved')
+                # maxties = 0
+                if level == 'Pair': maxties = 3
+                elif level == 'Three of a kind': maxties = 2
+                elif level == 'Four of a kind' : maxties = 1
+
+                spot1 = counts1.index(5-maxties)
+                spot2 = counts2.index(5-maxties)
                 if spot1==spot2:
-                    # now we look for the highest card 
                     counts1.pop(spot1)
                     counts2.pop(spot2)
                     for highspot1 in range(len(counts1)):
@@ -469,10 +480,8 @@ class Deck():
                             for highspot2 in range(len(counts2)):
                                 if counts2[highspot2]!=0:
                                     if highspot1==highspot2:
-                                        # come back to this case since we need to keep track 
-                                        # that we have looked at another high card
                                         ties+=1
-                                        if ties==3:
+                                        if ties==maxties:
                                             return hands
                                         continue
                                     elif highspot1>highspot2:
@@ -482,11 +491,12 @@ class Deck():
                                     elif highspot1<highspot2:
                                         hands.pop(-1)
                                         return hands
-                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
-                    if len(counts1)>len(counts2):
+                    # if we got here we know the hands are only 4 cards long 
+                    # so we need to check the lengths of the hands now
+                    if len(fullHand[0])>len(fullHand[-1]):
                         hands.pop(-1)
                         return hands
-                    elif len(counts1)<len(counts2):
+                    elif len(fullHand[0])<len(fullHand[-1]):
                         while len(hands)>1:
                             hands.pop(0)
                         return hands
@@ -502,7 +512,6 @@ class Deck():
                 pass
             case 'Two Pair':
                 #print('case Two Pair solved')
-                # can use similar logic here as for the full house case
                 spot1 = counts1.index(2)
                 spot2 = counts2.index(2)
                 if spot1==spot2:
@@ -511,7 +520,6 @@ class Deck():
                     pairspot1 = counts1.index(2)
                     pairspot2 = counts2.index(2)
                     if pairspot1 == pairspot2:
-                        # need more since we need to look at the high card 
                         counts1.pop(pairspot1)
                         counts2.pop(pairspot2)
                         for high1 in range(len(counts1)):
@@ -552,52 +560,6 @@ class Deck():
                     hands.pop(-1)
                     return hands
                 pass
-            case 'Three of a kind':
-                #print('case Three of a kind solved')
-                # could be similary to pair except now we look at three at a time
-                ties = 0 # number that stops us from checking more than 5 cards 
-                spot1 = counts1.index(3)
-                spot2 = counts2.index(3)
-                if spot1==spot2:
-                    # now we look for the highest card 
-                    counts1.pop(spot1)
-                    counts2.pop(spot2)
-                    for highspot1 in range(len(counts1)):
-                        if counts1[highspot1]!=0:
-                            for highspot2 in range(len(counts2)):
-                                if counts2[highspot2]!=0:
-                                    if highspot1==highspot2:
-                                        # come back to this case since we need to keep track 
-                                        # that we have looked at another high card
-                                        ties+=1
-                                        if ties==2:
-                                            return hands
-                                        continue
-                                    elif highspot1>highspot2:
-                                        while len(hands)>1:
-                                            hands.pop(0)
-                                        return hands
-                                    elif highspot1<highspot2:
-                                        hands.pop(-1)
-                                        return hands
-                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
-                    if len(counts1)>len(counts2):
-                        hands.pop(-1)
-                        return hands
-                    elif len(counts1)<len(counts2):
-                        while len(hands)>1:
-                            hands.pop(0)
-                        return hands
-                    else:
-                        return hands
-                elif spot1>spot2:
-                    while len(hands)>1:
-                        hands.pop(0)
-                    return hands
-                elif spot1<spot2:
-                    hands.pop(-1)
-                    return hands
-                pass
             case 'Straight': 
                 # count up the cards again find where the strihgt starts and then store the top number
                 # we can get away with only storing the top number since both players will need 
@@ -614,14 +576,13 @@ class Deck():
                 for hand in range(2):
                     straightlist = [num for num in uses[hand]]
                     straightlist.append(straightlist[0])
-                    for cardSpot in range(len(straightlist)-5):
+                    for cardSpot in range(len(straightlist)-4):
                         gaps = 0
                         for i in range(5):
                             if straightlist[cardSpot+i]==0:gaps+=1
                         if gaps<=wilds[wuse[hand]]: 
                             topnums[hand] = cardSpot
                             break
-
                 if topnums[0] == topnums[-1]:
                     return hands
                 if topnums[0] < topnums[-1]:
@@ -634,8 +595,6 @@ class Deck():
 
                 pass
             case 'Flush':
-                # read comments for straight
-                # only difference is we will use the 5 cards that make the flush not the five cards that make teh straight
                 #print('case Flush solved')
                 tocompare = [[]]*len(fullHand) # the list that will hold the highest flush for all hands 
                 for hand in range(len(fullHand)): # this loop is finding what cards in a hand are actually the ones that make the flush
@@ -701,48 +660,12 @@ class Deck():
                     hands.pop(-1)
                     return hands
                 pass
-            case 'Four of a kind':
-                #print('case Four of a kind solved')
-                # similar to both pair and 3 of a kind we just compare to 1 more card
-                spot1 = counts1.index(4)
-                spot2 = counts2.index(4)
-                if spot1==spot2:
-                    # now we look for the highest card 
-                    counts1.pop(spot1)
-                    counts2.pop(spot2)
-                    for highspot1 in range(len(counts1)):
-                        if counts1[highspot1]!=0:
-                            for highspot2 in range(len(counts2)):
-                                if counts2[highspot2]!=0:
-                                    if highspot1==highspot2:
-                                        # for 4 of a kind only 1 card matters so 
-                                        # if the high card matches we can return right away 
-                                        return hands
-                                    elif highspot1>highspot2:
-                                        while len(hands)>1:
-                                            hands.pop(0)
-                                        return hands
-                                    elif highspot1<highspot2:
-                                        hands.pop(-1)
-                                        return hands
-                    return hands
-                elif spot1>spot2:
-                    while len(hands)>1:
-                        hands.pop(0)
-                    return hands
-                elif spot1<spot2:
-                    hands.pop(-1)
-                    return hands
-                pass
             case 'Straight Flush':
                 # similar to straigth and flush but we need to do both 
                 # first we should seperate the cards in each hand by suit
-                # since we are sorting everyhting at the top of the function when we then seperate things into 
-                # suits we will know they are in order
-                # then for each suit we can do the thing we are doing in straights to see if there is a 
-                # straight and if there is we can stroe the highest index
+                # then for each suit check if it has more than 5-number of wilds cards
+                # if it does check for a straight same way as in straight case
                 #print('case Straight Flush solved')
-                # first find the cards that make the flushes 
                 tocompare = [0 for _ in range(len(fullHand))] # the list that will hold the highest flush for all hands 
                 for hand in range(len(fullHand)): # this loop is finding what cards in a hand are actually the ones that make the flush
                     suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
@@ -917,6 +840,12 @@ def game():
                 except:
                     print("Inproper input for wild cards.")
                     continue
+                set1 = set(dead)
+                set2 = set(wild)
+                intersec = set1.intersection(set2)
+                if intersec:
+                    print('There is at least 1 value in both dead and wild. \nPlease re-enter.')
+                    continue
                 break
 
             while True:
@@ -935,7 +864,7 @@ def game():
                     continue
                 break
         
-        print()
+        
         # simulating a round of poker
         for handnum in range(handsAtaTime):
             round+=1
@@ -956,6 +885,7 @@ def game():
                 winninghanddict[level]+=1
 
             if printStyle[0] == 's':
+                print()
                 print(f'Round {round}')
                 simPrint(org)
 
