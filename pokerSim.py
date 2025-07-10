@@ -190,8 +190,9 @@ class Deck():
         # card then we will update their hand type if they make a better hand
         # since it is possible we did multiple baords we add a rank for each board to each hand
         for hand in self.playerHands:
-            board=0
+            board=-1
             for rank in hand.getRanks():
+                board+=1 
                 # finding flushes 
                 numwilds = 0
                 suitcount = {'Spades':[], 'Hearts':[], 'Clubs':[], 'Diamonds':[]}
@@ -278,9 +279,11 @@ class Deck():
                     # this is the 5 of a kind case 
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Five of a kind'):
                         hand.setRank('Five of a kind', board)
+                        continue
                 elif any(x==4-numwilds for x in rankcount.values()):
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Four of a kind'):
                         hand.setRank('Four of a kind', board)
+                        continue
                 elif any(x==3-numwilds for x in rankcount.values()):
                     for key in rankcount.keys():
                         if rankcount[key] == 3-numwilds:
@@ -289,8 +292,10 @@ class Deck():
                             if any(y==2 for y in smaller.values()):
                                 if self.hr.index(hand.getRank(board)) < self.hr.index('Full House'):
                                     hand.setRank('Full House', board)
+                                    continue
                             if self.hr.index(hand.getRank(board)) < self.hr.index('Three of a kind'):
                                 hand.setRank('Three of a kind', board)
+                                continue
                 elif any(x==2-numwilds for x in rankcount.values()):
                     for key in rankcount.keys():
                         if rankcount[key] == 2:
@@ -299,10 +304,10 @@ class Deck():
                             if any(y==2 for y in smaller.values()):
                                 if self.hr.index(hand.getRank(board)) < self.hr.index('Two Pair'):
                                     hand.setRank('Two Pair', board)
+                                    continue
                                 break 
                     if self.hr.index(hand.getRank(board)) < self.hr.index('Pair'):
-                        hand.setRank('Pair', board)
-                board+=1  
+                        hand.setRank('Pair', board) 
             
     def calcWinner(self): # from the player hand ranks find which is the best
         toreturn = f'Dead cards were {self.dead} \nWild cards were {self.wild}\n'
@@ -333,7 +338,7 @@ class Deck():
                         winnershand = self.tiebreak(winnershand, winnerslevel, boardIndex)
             toreturn += f'Winning hand had rank of {winnerslevel} '
             if len(self.boardList)>0:
-                toreturn += f'on Board number {boardIndex+1} and board of: \n'
+                toreturn += f'on Board number {boardIndex+1}, with board of: \n'
                 if len(self.boardList)>0:
                     for b in self.boardList[boardIndex]:
                         for card in b:
@@ -453,153 +458,145 @@ class Deck():
                 # we now need to keep track of how many cards we check we only want to chec k5 cards max so we need to keep track
                 # of how many high cards we look at after the pair
                 ties = 0 # number that stops us from checking more than 5 cards 
-                for spot1 in range(len(counts1)):
-                    if counts1[spot1] == 2:
-                        for spot2 in range(len(counts2)):
-                            if counts2[spot2] == 2:
-                                if spot1==spot2:
-                                    # now we look for the highest card 
-                                    counts1.pop(spot1)
-                                    counts2.pop(spot2)
-                                    for highspot1 in range(len(counts1)):
-                                        if counts1[highspot1]!=0:
-                                            for highspot2 in range(len(counts2)):
-                                                if counts2[highspot2]!=0:
-                                                    if highspot1==highspot2:
-                                                        # come back to this case since we need to keep track 
-                                                        # that we have looked at another high card
-                                                        ties+=1
-                                                        if ties==3:
-                                                            return hands
-                                                        continue
-                                                    elif highspot1>highspot2:
-                                                        while len(hands)>1:
-                                                            hands.pop(0)
-                                                        return hands
-                                                    elif highspot1<highspot2:
-                                                        hands.pop(-1)
-                                                        return hands
-                                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
-                                    if len(counts1)>len(counts2):
-                                        hands.pop(-1)
-                                        return hands
-                                    elif len(counts1)<len(counts2):
+                spot1 = counts1.index(2)
+                spot2 = counts2.index(2)
+                if spot1==spot2:
+                    # now we look for the highest card 
+                    counts1.pop(spot1)
+                    counts2.pop(spot2)
+                    for highspot1 in range(len(counts1)):
+                        if counts1[highspot1]!=0:
+                            for highspot2 in range(len(counts2)):
+                                if counts2[highspot2]!=0:
+                                    if highspot1==highspot2:
+                                        # come back to this case since we need to keep track 
+                                        # that we have looked at another high card
+                                        ties+=1
+                                        if ties==3:
+                                            return hands
+                                        continue
+                                    elif highspot1>highspot2:
                                         while len(hands)>1:
                                             hands.pop(0)
                                         return hands
-                                    else:
+                                    elif highspot1<highspot2:
+                                        hands.pop(-1)
                                         return hands
-                                elif spot1>spot2:
-                                    while len(hands)>1:
-                                        hands.pop(0)
-                                    return hands
-                                elif spot1<spot2:
-                                    hands.pop(-1)
-                                    return hands
+                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
+                    if len(counts1)>len(counts2):
+                        hands.pop(-1)
+                        return hands
+                    elif len(counts1)<len(counts2):
+                        while len(hands)>1:
+                            hands.pop(0)
+                        return hands
+                    else:
+                        return hands
+                elif spot1>spot2:
+                    while len(hands)>1:
+                        hands.pop(0)
+                    return hands
+                elif spot1<spot2:
+                    hands.pop(-1)
+                    return hands
                 pass
             case 'Two Pair':
                 #print('case Two Pair solved')
                 # can use similar logic here as for the full house case
-                for spot1 in range(len(counts1)):
-                    if counts1[spot1] == 2:
-                        for spot2 in range(len(counts2)):
-                            if counts2[spot2] == 2:
-                                if spot1==spot2:
-                                    counts1.pop(spot1)
-                                    counts2.pop(spot2)
-                                    for pairspot1 in range(len(counts1)):
-                                        if counts1[pairspot1]==2:
-                                            for pairspot2 in range(len(counts2)):
-                                                if counts2[pairspot2]==2:
-                                                    if pairspot1 == pairspot2:
-                                                        # need more since we need to look at the high card 
-                                                        counts1.pop(pairspot1)
-                                                        counts2.pop(pairspot2)
-                                                        for high1 in range(len(counts1)):
-                                                            if counts1[high1]!=0:
-                                                                for high2 in range(len(counts2)):
-                                                                    if counts2[high2]!=0:
-                                                                        if high1==high2:
-                                                                            return hands
-                                                                        elif high1>high2:
-                                                                            while len(hands)>1:
-                                                                                hands.pop(0)
-                                                                            return hands
-                                                                        elif high1<high2:
-                                                                            hands.pop(-1)
-                                                                            return hands
-                                                        # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
-                                                        if len(counts1)>len(counts2):
-                                                            hands.pop(-1)
-                                                            return hands
-                                                        elif len(counts1)<len(counts2):
-                                                            while len(hands)>1:
-                                                                hands.pop(0)
-                                                            return hands
-                                                        else:
-                                                            return hands
-                                                    elif pairspot1>pairspot2:
-                                                        while len(hands)>1:
-                                                            hands.pop(0)
-                                                        return hands
-                                                    elif pairspot1<pairspot2:
-                                                        hands.pop(-1)
-                                                        return hands
-                                elif spot1>spot2:
-                                    while len(hands)>1:
-                                        hands.pop(0)
-                                    return hands
-                                elif spot1<spot2:
-                                    hands.pop(-1)
-                                    return hands
+                spot1 = counts1.index(2)
+                spot2 = counts2.index(2)
+                if spot1==spot2:
+                    counts1.pop(spot1)
+                    counts2.pop(spot2)
+                    pairspot1 = counts1.index(2)
+                    pairspot2 = counts2.index(2)
+                    if pairspot1 == pairspot2:
+                        # need more since we need to look at the high card 
+                        counts1.pop(pairspot1)
+                        counts2.pop(pairspot2)
+                        for high1 in range(len(counts1)):
+                            if counts1[high1]!=0:
+                                for high2 in range(len(counts2)):
+                                    if counts2[high2]!=0:
+                                        if high1==high2:
+                                            return hands
+                                        elif high1>high2:
+                                            while len(hands)>1:
+                                                hands.pop(0)
+                                            return hands
+                                        elif high1<high2:
+                                            hands.pop(-1)
+                                            return hands
+                        # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
+                        if len(counts1)>len(counts2):
+                            hands.pop(-1)
+                            return hands
+                        elif len(counts1)<len(counts2):
+                            while len(hands)>1:
+                                hands.pop(0)
+                            return hands
+                        else:
+                            return hands
+                    elif pairspot1>pairspot2:
+                        while len(hands)>1:
+                            hands.pop(0)
+                        return hands
+                    elif pairspot1<pairspot2:
+                        hands.pop(-1)
+                        return hands
+                elif spot1>spot2:
+                    while len(hands)>1:
+                        hands.pop(0)
+                    return hands
+                elif spot1<spot2:
+                    hands.pop(-1)
+                    return hands
                 pass
             case 'Three of a kind':
                 #print('case Three of a kind solved')
                 # could be similary to pair except now we look at three at a time
                 ties = 0 # number that stops us from checking more than 5 cards 
-                for spot1 in range(len(counts1)):
-                    if counts1[spot1] == 3:
-                        for spot2 in range(len(counts2)):
-                            if counts2[spot2] == 3:
-                                if spot1==spot2:
-                                    # now we look for the highest card 
-                                    counts1.pop(spot1)
-                                    counts2.pop(spot2)
-                                    for highspot1 in range(len(counts1)):
-                                        if counts1[highspot1]!=0:
-                                            for highspot2 in range(len(counts2)):
-                                                if counts2[highspot2]!=0:
-                                                    if highspot1==highspot2:
-                                                        # come back to this case since we need to keep track 
-                                                        # that we have looked at another high card
-                                                        ties+=1
-                                                        if ties==2:
-                                                            return hands
-                                                        continue
-                                                    elif highspot1>highspot2:
-                                                        while len(hands)>1:
-                                                            hands.pop(0)
-                                                        return hands
-                                                    elif highspot1<highspot2:
-                                                        hands.pop(-1)
-                                                        return hands
-                                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
-                                    if len(counts1)>len(counts2):
-                                        hands.pop(-1)
-                                        return hands
-                                    elif len(counts1)<len(counts2):
+                spot1 = counts1.index(3)
+                spot2 = counts2.index(3)
+                if spot1==spot2:
+                    # now we look for the highest card 
+                    counts1.pop(spot1)
+                    counts2.pop(spot2)
+                    for highspot1 in range(len(counts1)):
+                        if counts1[highspot1]!=0:
+                            for highspot2 in range(len(counts2)):
+                                if counts2[highspot2]!=0:
+                                    if highspot1==highspot2:
+                                        # come back to this case since we need to keep track 
+                                        # that we have looked at another high card
+                                        ties+=1
+                                        if ties==2:
+                                            return hands
+                                        continue
+                                    elif highspot1>highspot2:
                                         while len(hands)>1:
                                             hands.pop(0)
                                         return hands
-                                    else:
+                                    elif highspot1<highspot2:
+                                        hands.pop(-1)
                                         return hands
-                                elif spot1>spot2:
-                                    while len(hands)>1:
-                                        hands.pop(0)
-                                    return hands
-                                elif spot1<spot2:
-                                    hands.pop(-1)
-                                    return hands
+                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
+                    if len(counts1)>len(counts2):
+                        hands.pop(-1)
+                        return hands
+                    elif len(counts1)<len(counts2):
+                        while len(hands)>1:
+                            hands.pop(0)
+                        return hands
+                    else:
+                        return hands
+                elif spot1>spot2:
+                    while len(hands)>1:
+                        hands.pop(0)
+                    return hands
+                elif spot1<spot2:
+                    hands.pop(-1)
+                    return hands
                 pass
             case 'Straight': 
                 # count up the cards again find where the strihgt starts and then store the top number
@@ -680,77 +677,62 @@ class Deck():
                 #print('case Full House solved')
                 # find the highest 3 of a kind for each hand and compare them 
                 # if equal value compare highest paired card 
-                for spot1 in range(len(counts1)):
-                    if counts1[spot1] == 3:
-                        for spot2 in range(len(counts2)):
-                            if counts2[spot2] == 3:
-                                if spot1==spot2:
-                                    counts1.pop(spot1)
-                                    counts2.pop(spot2)
-                                    for pairspot1 in range(len(counts1)):
-                                        if counts1[pairspot1]>=2:
-                                            for pairspot2 in range(len(counts2)):
-                                                if counts2[pairspot2]>=2:
-                                                    if pairspot1 == pairspot2:
-                                                        return hands
-                                                    elif pairspot1>pairspot2:
-                                                        while len(hands)>1:
-                                                            hands.pop(0)
-                                                        return hands
-                                                    elif pairspot1<pairspot2:
-                                                        hands.pop(-1)
-                                                        return hands
-                                elif spot1>spot2:
-                                    while len(hands)>1:
-                                        hands.pop(0)
-                                    return hands
-                                elif spot1<spot2:
-                                    hands.pop(-1)
-                                    return hands
+                spot1 = counts1.index(3)
+                spot2 = counts2.index(3)
+                if spot1==spot2:
+                    counts1.pop(spot1)
+                    counts2.pop(spot2)
+                    pairspot1 = counts1.index(2)
+                    pairspot2 = counts2.index(2)
+                    if pairspot1 == pairspot2:
+                        return hands
+                    elif pairspot1>pairspot2:
+                        while len(hands)>1:
+                            hands.pop(0)
+                        return hands
+                    elif pairspot1<pairspot2:
+                        hands.pop(-1)
+                        return hands
+                elif spot1>spot2:
+                    while len(hands)>1:
+                        hands.pop(0)
+                    return hands
+                elif spot1<spot2:
+                    hands.pop(-1)
+                    return hands
                 pass
             case 'Four of a kind':
                 #print('case Four of a kind solved')
                 # similar to both pair and 3 of a kind we just compare to 1 more card
-                for spot1 in range(len(counts1)):
-                    if counts1[spot1] == 4:
-                        for spot2 in range(len(counts2)):
-                            if counts2[spot2] == 4: 
-                                if spot1==spot2:
-                                    # now we look for the highest card 
-                                    counts1.pop(spot1)
-                                    counts2.pop(spot2)
-                                    for highspot1 in range(len(counts1)):
-                                        if counts1[highspot1]!=0:
-                                            for highspot2 in range(len(counts2)):
-                                                if counts2[highspot2]!=0:
-                                                    if highspot1==highspot2:
-                                                        # for 4 of a kind only 1 card matters so 
-                                                        # if the high card matches we can return rieght away 
-                                                        return hands
-                                                    elif highspot1>highspot2:
-                                                        while len(hands)>1:
-                                                            hands.pop(0)
-                                                        return hands
-                                                    elif highspot1<highspot2:
-                                                        hands.pop(-1)
-                                                        return hands
-                                    # if we got here we know the hands are only 4 cards long so we need to check the lengths of the hands now
-                                    if len(counts1)>len(counts2):
-                                        hands.pop(-1)
+                spot1 = counts1.index(4)
+                spot2 = counts2.index(4)
+                if spot1==spot2:
+                    # now we look for the highest card 
+                    counts1.pop(spot1)
+                    counts2.pop(spot2)
+                    for highspot1 in range(len(counts1)):
+                        if counts1[highspot1]!=0:
+                            for highspot2 in range(len(counts2)):
+                                if counts2[highspot2]!=0:
+                                    if highspot1==highspot2:
+                                        # for 4 of a kind only 1 card matters so 
+                                        # if the high card matches we can return right away 
                                         return hands
-                                    elif len(counts1)<len(counts2):
+                                    elif highspot1>highspot2:
                                         while len(hands)>1:
                                             hands.pop(0)
                                         return hands
-                                    else:
+                                    elif highspot1<highspot2:
+                                        hands.pop(-1)
                                         return hands
-                                elif spot1>spot2:
-                                    while len(hands)>1:
-                                        hands.pop(0)
-                                    return hands
-                                elif spot1<spot2:
-                                    hands.pop(-1)
-                                    return hands
+                    return hands
+                elif spot1>spot2:
+                    while len(hands)>1:
+                        hands.pop(0)
+                    return hands
+                elif spot1<spot2:
+                    hands.pop(-1)
+                    return hands
                 pass
             case 'Straight Flush':
                 # similar to straigth and flush but we need to do both 
@@ -805,7 +787,7 @@ class Deck():
                 for spot1 in range(len(counts1)):
                     if counts1[spot1] >= 5:
                         for spot2 in range(len(counts2)):
-                            if counts2[spot2] == 5:
+                            if counts2[spot2] >= 5:
                                 if spot1==spot2:
                                     return hands
                                 elif spot1>spot2:
@@ -879,7 +861,7 @@ def game():
                     , 'Flush':0, 'Full House':0, 'Four of a kind':0, 'Straight Flush':0, 'Five of a kind':0}
     
     con = 'yes'
-    i = 0
+    round = 0
     changeDets = 'y'
     while con != 'n':
         if changeDets == 'y':
@@ -891,7 +873,7 @@ def game():
                     print("Must input a number.")
                     continue'''
                 try:
-                    numboards = int(input('How many boards should be played? '))
+                    numboards = int(input('How many boards should be played? \n(8 Cards per board) '))
                 except:
                     print("Must input a number.")
                     continue
@@ -946,16 +928,17 @@ def game():
                 try: 
                     printStyle = input('How should the hand be shown? As a simulation or no print? ')
                     printStyle = printStyle.lower()
-                    if printStyle != 's' and printStyle != 'n':
+                    if printStyle[0] != 's' and printStyle[0] != 'n':
                         raise KeyError
                 except:
                     print('Enter S for simulation or N for no print.')
                     continue
                 break
-
+        
+        print()
         # simulating a round of poker
         for handnum in range(handsAtaTime):
-            i+=1
+            round+=1
             org = Deck(wild, dead, numdecks)
             org.shuffle()
             org.deal(numplayers,numcards,numboards)
@@ -972,8 +955,8 @@ def game():
             for level in org.winningLevel:
                 winninghanddict[level]+=1
 
-            if printStyle == 's':
-                print(f'Round {i}')
+            if printStyle[0] == 's':
+                print(f'Round {round}')
                 simPrint(org)
 
         changeDets = input('Do you want to change the format of the hands? Y/N ')
