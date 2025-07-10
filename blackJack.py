@@ -285,7 +285,7 @@ def game():
             print("Must input a number.")
             continue
         try: 
-            startingB = float(input("How much do players start with? "))
+            startingB = float(input("What is the starting balance for players? "))
         except:
             print("Must input a number.")
             continue
@@ -312,7 +312,7 @@ def game():
             while True:
                 isaNum = True
                 try: 
-                    betsize = float(input(f"What is the bet size, for player {i}? They currently have {hand.getBalance():.2f} "))
+                    betsize = float(input(f"What is the bet size, for player {i}? Current balance - {hand.getBalance():.2f} "))
                     if betsize>hand.getBalance(): raise KeyError
                 except:
                     print("Must input a number less then or equal to the player's current balance.")
