@@ -64,6 +64,7 @@ class Hand():
     # we can add and remove cards from a hand, clear a hand, get and set the rank of a hand
     def __init__(self, cards, numboards):
         self.cards = list()
+        self.shortPrint = False
         self.rank = ['High Card']*max(numboards, 1) # default lowest value of a hand
         for card in cards:
             self.cards.append(card)
@@ -91,7 +92,10 @@ class Hand():
     def __str__(self):
         toreturn = ('Hand is: ')
         for card in self.cards:
-            toreturn += card.getStr()
+            if self.shortPrint:
+                toreturn += f'{card.getVal()} {card.getSuit()[0]} '
+            else:
+                toreturn += card.getStr()
             if card!=self.cards[-1]: toreturn+='& '
         return toreturn
     
@@ -115,6 +119,7 @@ class Deck():
         self.numBorads = int()
         self.dead = dead
         self.wild = wild
+        self.shortPrint = False
 
         suits = ['Spades', 'Hearts', 'Clubs', 'Diamonds']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
@@ -126,8 +131,12 @@ class Deck():
     def __str__(self):
         toprint = ''
         for card in self.deck:
-            toprint += card.getStr()
+            if self.shortPrint:
+                toprint += f'{card.getVal()} {card.getSuit()[0]} '
+            else:
+                toprint += card.getStr()
         return(toprint)
+
 
     def shuffle(self): # shuffles a deck 
         shuffled = []
@@ -159,6 +168,7 @@ class Deck():
                 else:
                     self.playerHands.append(Hand([self.deck.pop(0)], numboards))
         self.numBorads = numboards
+        for hand in self.playerHands: hand.shortPrint = self.shortPrint
         self.dealboards(numboards)
                 
     def dealboards(self, numB):
@@ -342,12 +352,18 @@ class Deck():
                 if len(self.boardList)>0:
                     for b in self.boardList[boardIndex]:
                         for card in b:
-                            toreturn += card.getStr()
+                            if self.shortPrint:
+                                toreturn += f'{card.getVal()} {card.getSuit()[0]} '
+                            else:
+                                toreturn += card.getStr()
                             if card != b[-1]: toreturn +='& '
             toreturn += '\nWith a hand of: \n'
             for hand in winnershand:
                 for card in hand.getCards():
-                    toreturn += card.getStr()
+                    if self.shortPrint:
+                            toreturn += f'{card.getVal()} {card.getSuit()[0]} '
+                    else:
+                        toreturn += card.getStr()
                     if card != hand.getCards()[-1]:
                         toreturn += '& '
                 if len(winnershand) > 1 and not hand == winnershand[-1]:
@@ -786,15 +802,11 @@ def game():
     con = 'yes'
     round = 0
     changeDets = 'y'
+    sp = False
     while con != 'n':
         if changeDets == 'y':
             while True:
                 # getting user input
-                '''try: 
-                    numdecks = int(input("How many decks are we playing with? "))
-                except:
-                    print("Must input a number.")
-                    continue'''
                 try:
                     numboards = int(input('How many boards should be played? \n(8 Cards per board) '))
                 except:
@@ -859,6 +871,15 @@ def game():
                     printStyle = printStyle.lower()
                     if printStyle[0] != 's' and printStyle[0] != 'n':
                         raise KeyError
+                    elif printStyle[0] == 's':
+                        try: 
+                            compress = (input("Do you want to print the values in a compressed way? (Y or N) ")).lower()
+                            if compress[0] != 'y' and compress[0] != 'n': raise KeyError
+                            elif compress[0] == 'y' : sp = True
+                            elif compress[0] == 'n' : sp = False
+                        except:
+                            print("Must 'y' or 'n''.")
+                            continue
                 except:
                     print('Enter S for simulation or N for no print.')
                     continue
@@ -869,6 +890,7 @@ def game():
         for handnum in range(handsAtaTime):
             round+=1
             org = Deck(wild, dead, numdecks)
+            org.shortPrint = sp
             org.shuffle()
             org.deal(numplayers,numcards,numboards)
             org.calcHandRanks()
