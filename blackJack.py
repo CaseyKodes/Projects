@@ -14,7 +14,7 @@ class Card():
         return self.Val
     def getValnum(self):
         if self.Val == 'Ace' :
-            return [1, 11]
+            return 11
         if self.Val == 'King' :
             return 10
         if self.Val == 'Queen' :
@@ -126,6 +126,7 @@ class Shoe():
         self.dealer = Hand([], 0)
         self.players = list()
         self.balance = balance
+        self.count = 0
 
         suits = ['s', 'h', 'c', 'd']
         values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 'Jack', 'Queen', 'King', 'Ace']
@@ -573,8 +574,13 @@ def game():
             if shoe.players[player].getBalance() <= 0:
                 print(f'Player {player+1} is out of money and kicked from the table.')
                 toremove.append(player)
-        for i in toremove:
+        
+        # reversing this list makes it so we pop from the end first
+        # gets rid of index out of range errors
+        toremove.reverse()
+        for i in toremove: 
             shoe.players.pop(i)
+
         numplayers-=len(toremove)
         while True:
             if enough:
