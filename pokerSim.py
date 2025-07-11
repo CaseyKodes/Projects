@@ -248,9 +248,7 @@ class Deck():
                         hand.setRank('Flush', board)
 
                 # filling how many instances of a card value there are 
-                # this works to find natural straights and straights that are 5-the number of wilds in a hand 
-                # where the wilds are then used to be the finishing cards on the outside of the straight
-                # TODO it does not work for using wilds to fill gaps so I think i just make a functionality for that
+                # if the value is not wild or dead
                 rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, 
                              '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                 if len(self.boardList) > 0:
@@ -887,6 +885,7 @@ def game():
         
         
         # simulating a round of poker
+        part=1
         for handnum in range(handsAtaTime):
             round+=1
             org = Deck(wild, dead, numdecks)
@@ -910,6 +909,11 @@ def game():
                 print()
                 print(f'Round {round}')
                 simPrint(org)
+            elif printStyle[0] == 'n':
+                if any(round == x*handsAtaTime/10 for x in [1,2,3,4,5,6,7,8,9,10]):
+                    print(f'{part*10}% of hands dealt')
+                    part+=1
+                
 
         changeDets = input('Do you want to change the format of the hands? Y/N ')
         changeDets = changeDets.lower()
