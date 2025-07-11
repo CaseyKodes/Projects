@@ -272,6 +272,7 @@ def game():
     numplayers = 4
     startingB = 1000
     betsize = 10
+    fullHistory = False
     while True:
         # getting user input
         try: 
@@ -291,6 +292,23 @@ def game():
             continue
         if (1+numplayers)*2<=numdecks*52:
             break
+    while True:
+        try:
+            history = input("Do you want to see the full history of hands played? ('Y' or 'N')" )
+            history = history.lower()
+            if history[0] != 'y' and history[0] != 'n':
+                print('Must enter "Y" or "N"')
+                raise KeyError
+            elif history[0] == 'y': 
+                fullHistory = True
+                break
+            elif history[0] == 'n': 
+                fullHistory = False
+                break
+
+        except Exception as e:
+            print(e)
+            continue 
         
     shoe = Shoe(numdecks, startingB)
     shoe.shuffle()
@@ -299,7 +317,9 @@ def game():
         dealerBlackJack = False
         i = 1
         shoe.deal(numplayers)
-        os.system('cls')
+        if not fullHistory:
+            os.system('cls')
+        else: print()
         toremove = []
         for hand in shoe.players:
             hand.setDoubled(False)
