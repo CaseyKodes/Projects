@@ -23,6 +23,24 @@ def play():
             print("Must input a number.")
             continue
         break
+    fullHistory = False
+    while True:
+        try:
+            history = input("Do you want to see the full history of spins played? ('Y' or 'N')" )
+            history = history.lower()
+            if history[0] != 'y' and history[0] != 'n':
+                print('Must enter "Y" or "N"')
+                raise KeyError
+            elif history[0] == 'y': 
+                fullHistory = True
+                break
+            elif history[0] == 'n': 
+                fullHistory = False
+                break
+        except Exception as e:
+            print(e)
+            continue 
+
     while True:
         RB = False
         EO = False
@@ -123,14 +141,13 @@ def play():
         with open(r"\\midfile01\Departments\Metrology MFG\Casey Provitera\funzies\\roulette_dictionary.csv", 'r') as file:
 
             reader = csv.reader(file)
-            i = -1
+            i = 1
             for row in reader:
-                i+=1
                 if i == result:
+                    print(f'Row {i}, {row}')
                     data = row
+                i+=1
         
-        print(data)
-
         if RB: # check color
             if placedBet == str(data[1]):
                 print('Bet won')
@@ -182,7 +199,8 @@ def play():
 
         exit = input('Enter any character to play the next hand. \nEnter 0 to exit. ')
         if exit != '0': 
-            os.system('cls')
+            if not fullHistory:
+                os.system('cls')
             continue
         else: print('Thanks for playing.'); quit()
 
