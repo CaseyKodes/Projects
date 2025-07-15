@@ -1,6 +1,7 @@
 # Poker simulator
  
 # things that are possible
+    # can play short deck with adjusted hand ranking
     # as long as there are enough cards in the deck
         # deal hands to any number of players 
         # the hands can be any size 
@@ -13,9 +14,14 @@ import random as r
 
 class Rankings(): # basically just a place to hold these arrays which tell us the ordering of hands 
     HandValueOrder = ['High Card', 'Pair', 'Two Pair', 'Three of a kind', 'Straight', 'Flush', 'Full House', 'Four of a kind', 'Straight Flush', 'Five of a kind']
+    HandValueOrderShort = ['High Card', 'Pair', 'Two Pair', 'Three of a kind', 'Straight', 'Full House', 'Flush', 'Four of a kind', 'Straight Flush', 'Five of a kind']
     CardValueOrder = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
     def getCrank(): return Rankings.CardValueOrder
-    def getHrank(): return Rankings.HandValueOrder
+    def getHrank(short): 
+        if short:
+            return Rankings.HandValueOrderShort
+        else:
+            return Rankings.HandValueOrder
 
 class Card():
     # card objects have a value and suit which are the defining attributes 
@@ -45,9 +51,9 @@ class Card():
     def __str__(self):
         return self.getStr()
     def __eq__(self, other):
-        return self.cr.index(self.getVal()) == self.cr.index(other.getVal())
+        return self.getVal() == other.getVal()
     def __ne__(self, other):
-        return not self==other
+        return not ((self.getVal() == other.getVal()) and (self.getSuit() == other.getSuit()))
     def __lt__(self, other):
         return self.cr.index(self.getVal()) < self.cr.index(other.getVal())
     def __gt__(self, other):
@@ -107,22 +113,24 @@ class Deck():
     # we have funcitons to deal hands to players, deal a board of shared cards, 
     # shuffle the deck ( in two different ways ), and calculate the rank of each hand
 
-    def __init__(self, wild=[], dead=[], numdecks=1): # creates a deck of 52 cards, 13 ranks and 4 suits
+    def __init__(self, wild=[], dead=[], numdecks=1, short= False): # creates a deck of 52 cards, 13 ranks and 4 suits
         self.deck = list()
         self.playerHands = list()
         self.boardList = []
         self.burnt = list()
         self.winnerstr = str()
         self.winningLevel = list()
-        self.hr = Rankings.getHrank()
+        self.hr = Rankings.getHrank(short)
         self.cr = Rankings.getCrank()
         self.numBorads = int()
         self.dead = dead
         self.wild = wild
         self.shortPrint = False
+        self.short = short
 
         suits = ['Spades', 'Hearts', 'Clubs', 'Diamonds']
-        values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
+        if short: values = ['6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
+        else: values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
         for deck in range(numdecks):
             for suit in suits:
                 for value in values:
@@ -136,7 +144,6 @@ class Deck():
             else:
                 toprint += card.getStr()
         return(toprint)
-
 
     def shuffle(self): # shuffles a deck 
         shuffled = []
@@ -226,8 +233,8 @@ class Deck():
                     # if we are here we know we have a flush now we want to check if those cards are in order 
                     # looking for straight flush
                     for key, value in suitcount.items():
-                        rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, 
-                                    '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                        if self.short: rankcount = {'6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                        else: rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                         for card in value:
                             if card.getVal() in self.dead or card.getVal() in self.wild:
                                 continue
@@ -249,8 +256,8 @@ class Deck():
 
                 # filling how many instances of a card value there are 
                 # if the value is not wild or dead
-                rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, 
-                             '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                if self.short: rankcount = {'6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                else: rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                 if len(self.boardList) > 0:
                     for b in self.boardList[board]:
                         for card in b:
@@ -398,7 +405,11 @@ class Deck():
 
         #getting the exact number of each rank card in the first and last hand
         # this is the most helpful for hands that need 5 cards it does not do much use otherwise but still worth keeping
-        ranknums = [{'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0},
+        if self.short:
+            ranknums = [{'6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0},
+                    {'6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}]
+        else:
+            ranknums = [{'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0},
                     {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}]
         for card in fullHand[0]:
             ranknums[0][card.getVal()]+=1
@@ -575,18 +586,14 @@ class Deck():
                     return hands
                 pass
             case 'Straight': 
-                # count up the cards again find where the strihgt starts and then store the top number
-                # we can get away with only storing the top number since both players will need 
-                # 5 cards in a row so if they have the same top they have the same five
-                # even though we could be compairing more than 2 hands we know that they first 2 hands will have exact
-                # same ranking since they would have needed to tie to get back into here with more than 2 hands so we 
-                # only need to look at the first and last hands to accuratly judge them all 
+                # section off into groups of 5 
+                # if in the 5 there are 0s (gaps) less in number than the wild number we know we found the straight
                 topnums = [-1,-1] # start at -1 so if we need to test it will be easier to see when it is not overridden  
                 uses = [counts1, counts2]
                 wuse = [0,-1]
 
                 # updated logic now works to break ties 
-                # straights can use wilds in the middle or on the outsides or not at all and it still works
+                # straights can use wilds in the middle or on the outsides or not at all and it still works 
                 for hand in range(2):
                     straightlist = [num for num in uses[hand]]
                     straightlist.append(straightlist[0])
@@ -677,7 +684,7 @@ class Deck():
             case 'Straight Flush':
                 # similar to straigth and flush but we need to do both 
                 # first we should seperate the cards in each hand by suit
-                # then for each suit check if it has more than 5-number of wilds cards
+                # then for each suit check if it has more than 5 minus number of wilds cards
                 # if it does check for a straight same way as in straight case
                 #print('case Straight Flush solved')
                 tocompare = [0 for _ in range(len(fullHand))] # the list that will hold the highest flush for all hands 
@@ -692,8 +699,11 @@ class Deck():
                     # now for every list of cards that makes a flush we need to see if there is a stright in them
                     topcard = []
                     for flush in maybeadd:
-                        rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
-                         '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                        if self.short:
+                            rankcount = {'6':0, '7':0, '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
+                        else:
+                            rankcount = {'2':0, '3':0, '4':0, '5':0, '6':0, '7':0, 
+                                        '8':0, '9':0, '10':0, 'Jack':0, 'Queen':0, 'King':0, 'Ace':0}
                         for card in flush:
                             rankcount[card.getVal()]+=1
                         straightlist = []
@@ -750,10 +760,10 @@ def handelInput(L:list): # just makes sure all the values in the list are actual
             case 'eight':changed.append('8'); pass
             case 'nine':changed.append('9'); pass
             case 'ten':changed.append('10'); pass
-            case 'jack':changed.append('Jack'); pass
-            case 'queen':changed.append('Queen'); pass
-            case 'king':changed.append('King'); pass
-            case 'ace':changed.append('Ace'); pass
+            case 'jack' | 'j':changed.append('Jack'); pass
+            case 'queen' | 'q':changed.append('Queen'); pass
+            case 'king' | 'k':changed.append('King'); pass
+            case 'ace' | 'a':changed.append('Ace'); pass
             case _: changed.append(value); pass # default case 
     return changed 
 
@@ -801,10 +811,22 @@ def game():
     round = 0
     changeDets = 'y'
     sp = False
+    sd = False
+    deckLength = 52
+    handsplayed = 0
+
     while con != 'n':
         if changeDets == 'y':
             while True:
                 # getting user input
+                try: 
+                    shortdeck = input('Are we playing short deck? ')
+                    if shortdeck[0] != 'y' and shortdeck[0] != 'n': raise KeyError
+                    elif shortdeck[0] == 'y' : sd = True; deckLength=36
+                    elif shortdeck[0] == 'n' : sd = False; deckLength=52
+                except:
+                    print("Must 'y' or 'n''.")
+                    continue
                 try:
                     numboards = int(input('How many boards should be played? \n(8 Cards per board) '))
                 except:
@@ -820,7 +842,7 @@ def game():
                 except:
                     print("Must input a number.")
                     continue
-                if (numplayers*numcards + 8*numboards<= 52*numdecks):
+                if (numplayers*numcards + 8*numboards<= deckLength*numdecks):
                     break
                 else:
                     print(f'There are not enough cards in {numdecks} deck(s) for that to work enter different numbers.')
@@ -883,12 +905,11 @@ def game():
                     continue
                 break
         
-        
         # simulating a round of poker
         part=1
         for handnum in range(handsAtaTime):
             round+=1
-            org = Deck(wild, dead, numdecks)
+            org = Deck(wild, dead, numdecks, short=sd)
             org.shortPrint = sp
             org.shuffle()
             org.deal(numplayers,numcards,numboards)
@@ -909,11 +930,11 @@ def game():
                 print()
                 print(f'Round {round}')
                 simPrint(org)
-            elif printStyle[0] == 'n':
-                if any(round == x*handsAtaTime/10 for x in [1,2,3,4,5,6,7,8,9,10]):
+            elif printStyle[0] == 'n' and handsAtaTime>100:
+                if any(round-handsplayed == x*handsAtaTime/10 for x in [1,2,3,4,5,6,7,8,9,10]):
                     print(f'{part*10}% of hands dealt')
                     part+=1
-                
+        handsplayed+=handsAtaTime
 
         changeDets = input('Do you want to change the format of the hands? Y/N ')
         changeDets = changeDets.lower()
