@@ -25,7 +25,7 @@ class player():
         self.attacks = [['-' for i in range(10)] for j in range(10)] # text here bc this is what we will show a user
         self.ships = [[0 for i in range(10)] for j in range(10)] # numbers here bc this is what we will use for logic 
         self.turn = True
-        shipLens = [2]#[5, 4, 4, 3, 3, 2, 2, 2, 1, 1, 1]
+        shipLens = [5, 4, 4, 3, 3, 2, 2, 2, 1, 1, 1]
         print('Grid size is 10x10.')
         for num in shipLens:
             print('Updated grid')
@@ -158,6 +158,10 @@ def game():
             hold = p
             p = notp
             notp = hold
+            os.system('cls')
+            print('Last attack was a miss next players turn.')
+            ready = input('next player ready. ')
+            os.system('cls')
     toprint = 'Game over '
     if p1.stillAlive(): toprint += 'Player 1 won.'
     if p2.stillAlive(): toprint += 'Player 2 won.'
