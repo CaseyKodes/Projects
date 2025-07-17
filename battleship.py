@@ -5,6 +5,7 @@ classes
     players - 
         used to hold player data, where tehy puth their ships, where they have attacked
         has funcitons to know if a player has any ships left, to attack another player, and to print out the grids of a player
+
     difficulty -
         used to make global variables that determine how big a board is and how many ships go on a board
     
@@ -13,10 +14,10 @@ classes
         if how many times it has been hit is equal to its length we say a ship was sank
     
 Multi or Single player
-    AI is enabled if users choose to run code as a single player
-    we should then ask what level of the AI they want currently only AI level that works is 1 which is random guess
+    a bot is able if users choose to run code as a single player
+    ask what level of the AI they want currently only AI level that works is 1 which is random guess
 
-'''      
+'''
 
 import os
 import random as r
@@ -257,7 +258,7 @@ def game():
     GOON = input('Player 1\'s turn to enter boats')
     p1 = player()
 
-    os.system('cls') # temporary to see ow the AI does placing the boats
+    os.system('cls') 
     
     if playerCount==2:
         os.system('cls')
