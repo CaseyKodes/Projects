@@ -10,18 +10,14 @@ classes
     
     ship - ?
         would have the information to tell us if a ship was sank
+        holds a list of tuples (x,y), its length and how many times it has been hit
+        if how many times it has been hit is equal to its length we say a ship was sank
     
-    AI - ?
-        would be used to make it possible for one person to play against computer
-        might do this within the player class and have a field saying if it an ai player or not
+Multi or Single player
+    AI is enabled if users choose to run code as a single player
+    we should then ask what level of the AI they want currently only AI level that works is 1 which is random guess
+
 '''      
-
-
-'''
-
-in future make it so you can play against an AI
-
-'''
 
 import os
 import random as r
@@ -46,19 +42,36 @@ class difficulty():
                 shipLens = [5, 4, 4, 3, 3, 3, 2, 2, 1, 1, 1]
                 pass
 
+class ship():
+    def __init__(self, length):
+        self.cords = []
+        self.length = length
+        self.hits = 0
+    def setCord(self, x, y):
+        self.cords.append((x,y))
+    def getCords(self):
+        return self.cords
+    def isSank(self):
+        if self.hits == self.length:
+            print(f'Ship of length {self.length} has been sunk!')
+    def isHit(self):
+        self.hits+=1
+
 class player():
-    def __init__(self, isAI = False):
+    def __init__(self, isAI = False, level = 0):
         # init should not take params 
         # in the function is where we decide where the boats are
         self.AI = isAI
+        self.AIlevel = level
         self.attacks = [['-' for i in range(len(validcords))] for j in range(len(validcords))] # text here bc this is what we will show a user
         self.shipVals = [['-' for i in range(len(validcords))] for j in range(len(validcords))] # we can show a player what the other players has hit and missed
         self.ships = [[0 for i in range(len(validcords))] for j in range(len(validcords))] # numbers here bc this is what we will use for logic 
         self.turn = True
         self.shipLoactions = [[]]*len(shipLens)
+        self.army = []
         print(f'Grid size is {len(validcords)}x{len(validcords)}.')
         for num in shipLens:
-            if not self.AI or self.AI: # TODO remove the or part for now I want to see how it does 
+            if not self.AI: # TODO remove the or part for now I want to see how it does 
                 print('Updated grid')
                 self.printMap(self.shipVals)
                 print(f'Current ship length {num}.')
@@ -85,14 +98,16 @@ class player():
                     match direction: # in each case we need to see if all the indexes in direction are unoccupided and are inbetween 1-10
                         case 1:
                             if (startY - num +1) not in validcords:
-                                raise Exception('Boat would go off screen try again.')
+                                raise Exception('Boat would go off screen.')
                             for i in range(num):
                                 #need to check if each point the boat will be on is valid 
                                 #if it is valid we should store the coords if not we throw an error
                                 if(self.ships[startY - i][startX]):
                                     raise Exception('Boat would go onto another boat.')
                             # if we get out here we know that all pints the boat will be on are vlaid so now we should place the baot on those points 
+                            self.army.append(ship(num))
                             for i in range(num):
+                                self.army[-1].setCord(startX, startY-i)
                                 self.ships[startY-i][startX] = 1
                                 self.shipVals[startY-i][startX] = 'S' 
                             pass
@@ -102,7 +117,9 @@ class player():
                             for i in range(num):
                                 if(self.ships[startY + i][startX]):
                                     raise Exception('Boat would go onto another boat.')
+                            self.army.append(ship(num))
                             for i in range(num):
+                                self.army[-1].setCord(startX, startY+i)
                                 self.ships[startY+i][startX] = 1
                                 self.shipVals[startY+i][startX] = 'S' 
                             pass
@@ -112,7 +129,9 @@ class player():
                             for i in range(num):
                                 if(self.ships[startY][startX+i]):
                                     raise Exception('Boat would go onto another boat.')
+                            self.army.append(ship(num))
                             for i in range(num):
+                                self.army[-1].setCord(startX+i, startY)
                                 self.ships[startY][startX+i] = 1
                                 self.shipVals[startY][startX+i] = 'S' 
                             pass
@@ -122,7 +141,9 @@ class player():
                             for i in range(num):
                                 if(self.ships[startY][startX-i]):
                                     raise Exception('Boat would go onto another boat.')
+                            self.army.append(ship(num))
                             for i in range(num):
+                                self.army[-1].setCord(startX-i, startY)
                                 self.ships[startY][startX-i] = 1
                                 self.shipVals[startY][startX-i] = 'S' 
                             pass
@@ -133,10 +154,16 @@ class player():
 
     def tryAttack(self, other, x, y):
         if self.attacks[y][x] == '-':
+            print(f'Attacking {x}, {y}.')
             if other.ships[y][x]:
                 print('Target is a hit!')
                 self.attacks[y][x] = 'H'
                 other.shipVals[y][x] = 'H'
+                for ship in other.army:
+                    for location in ship.getCords():
+                        if location[0] == x and location[1] == y:
+                            ship.isHit()
+                            ship.isSank()
                 other.ships[y][x] = 0
                 return True
             else:
@@ -145,8 +172,30 @@ class player():
                 other.shipVals[y][x] = 'm'
                 return False
         else:
-            print('Target has already been attacked, pick a different location.')
+            if not self.AI:
+                print('Target has already been attacked, pick a different location.')
             return True
+    
+    def AImove(self):
+        # depending on the level of AI
+        match self.AIlevel:
+            case 1: # dumb AI random guess
+                while True:
+                    try:
+                        attaX = r.randint(0, validcords[-1])
+                        attaY = r.randint(0, validcords[-1])
+                        invalid = 'This is not a valid target location.'
+                        if attaX not in validcords: 
+                            raise Exception(invalid)
+                        if attaY not in validcords: 
+                            raise Exception(invalid)
+                        return [attaX, attaY]
+                    except Exception as e:
+                        print(f'Random pick did not work trying again, {e}')
+                        continue
+            case 2: # smarter AI depends on if we hit to see where to go
+                pass
+        pass
 
     def stillAlive(self):
         toreturn = False
@@ -189,6 +238,17 @@ def game():
             print(f'Something went wrong try again, {e}')
             continue
     
+    if playerCount==1:
+        while True:
+            try:
+                level = int(input('What is the computers level? '))
+                if level not in [1,2]:
+                    raise Exception("Level should be either '1' or '2'.")
+                break
+            except Exception as e:
+                print(f'An error occured try again, {e}')
+            
+    
     # getting player ship locations
     GOON = input('Player 1\'s turn to enter boats')
     p1 = player()
@@ -204,8 +264,7 @@ def game():
         print('Computer is now placing its ships.')
         # function for computer to place its ships
         # probably same as normal player just have random generated numbers 
-        p2 = player(True)
-        
+        p2 = player(True, level)
 
     playerArry = [p1, p2]
     p = 0
@@ -213,46 +272,39 @@ def game():
 
     # plays while both players have ships left
     while(p1.stillAlive() and p2.stillAlive()):
+        playerArry[p].turn = True
         if playerArry[p].AI:
-            # do AI functions 
             print('Computers Turn')
             ready = input('Ready? ')
-            try:
-                attaX = r.randint(0, validcords[-1])
-                attaY = r.randint(0, validcords[-1])
-                invalid = 'This is not a valid target location.'
-                if attaX not in validcords: 
-                    raise Exception(invalid)
-                if attaY not in validcords: 
-                    raise Exception(invalid)
-            except Exception as e:
-                print(f'Random pick did not work trying again, {e}')
-                continue
-            playerArry[p].turn = playerArry[p].tryAttack(playerArry[notp], attaX, attaY)
-
+            while playerArry[p].turn:
+                spots = playerArry[p].AImove()
+                playerArry[p].turn = playerArry[p].tryAttack(playerArry[notp], spots[0], spots[1])
+                if not playerArry[notp].stillAlive(): break
         else:
             print(f'Player {p+1}\'s turn.')
             print('Your boats (Includes other players attackes)')
             playerArry[p].printMap(playerArry[p].shipVals)
-            print('Your attacks.')
-            playerArry[p].printMap(playerArry[p].attacks)
-            try:
-                attaX = int(input('X coord to attack. '))
-                attaY = int(input('Y coord to attack. '))
-                invalid = 'This is not a valid target location.'
-                if attaX not in validcords: 
-                    raise Exception(invalid)
-                if attaY not in validcords: 
-                    raise Exception(invalid)
-            except Exception as e:
-                print(f'An error occured try again, {e}')
-                continue
-            playerArry[p].turn = playerArry[p].tryAttack(playerArry[notp], attaX, attaY)
+            while playerArry[p].turn:
+                print('Your attacks.')
+                playerArry[p].printMap(playerArry[p].attacks)
+                try:
+                    attaX = int(input('X coord to attack. '))
+                    attaY = int(input('Y coord to attack. '))
+                    invalid = 'This is not a valid target location.'
+                    if attaX not in validcords: 
+                        raise Exception(invalid)
+                    if attaY not in validcords: 
+                        raise Exception(invalid)
+                except Exception as e:
+                    print(f'An error occured try again, {e}')
+                    continue
+                playerArry[p].turn = playerArry[p].tryAttack(playerArry[notp], attaX, attaY)
+                if not playerArry[notp].stillAlive(): break
         
         if playerArry[p].turn: # we know we had a hit since it is still the same players turn
             if playerArry[notp].stillAlive(): continue
             else:
-                print('Your winning attacks.')
+                print('Winning attacks.')
                 playerArry[p].printMap(playerArry[p].attacks)
                 break
         else: # if we get here we know we missed so we need to change what player is acting
@@ -265,7 +317,11 @@ def game():
             ready = input('Next player ready? ')
             os.system('cls')
 
-    toprint = f'Game over Player {p+1} won.'
+    toprint = f'Game over: '
+    if playerArry[p].AI:
+        toprint += 'Computer won.'
+    else:
+        toprint += f'Player {p+1} won.'
 
     print(toprint)
 
