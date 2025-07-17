@@ -8,8 +8,7 @@ classes
     difficulty -
         used to make global variables that determine how big a board is and how many ships go on a board
     
-    ship - ?
-        would have the information to tell us if a ship was sank
+    ship -
         holds a list of tuples (x,y), its length and how many times it has been hit
         if how many times it has been hit is equal to its length we say a ship was sank
     
@@ -47,6 +46,7 @@ class ship():
         self.cords = []
         self.length = length
         self.hits = 0
+        self.sunk = False
     def setCord(self, x, y):
         self.cords.append((x,y))
     def getCords(self):
@@ -54,6 +54,7 @@ class ship():
     def isSank(self):
         if self.hits == self.length:
             print(f'Ship of length {self.length} has been sunk!')
+            self.sunk = True
     def isHit(self):
         self.hits+=1
 
@@ -69,9 +70,10 @@ class player():
         self.turn = True
         self.shipLoactions = [[]]*len(shipLens)
         self.army = []
-        print(f'Grid size is {len(validcords)}x{len(validcords)}.')
+        if not self.AI:
+            print(f'Grid size is {len(validcords)}x{len(validcords)}.')
         for num in shipLens:
-            if not self.AI: # TODO remove the or part for now I want to see how it does 
+            if not self.AI: 
                 print('Updated grid')
                 self.printMap(self.shipVals)
                 print(f'Current ship length {num}.')
@@ -148,7 +150,8 @@ class player():
                                 self.shipVals[startY][startX-i] = 'S' 
                             pass
                 except Exception as e:
-                    print(f'An error occured try again, {e}')
+                    if not self.AI:
+                        print(f'An error occured try again, {e}')
                     continue
                 break
 
@@ -162,8 +165,8 @@ class player():
                 for ship in other.army:
                     for location in ship.getCords():
                         if location[0] == x and location[1] == y:
-                            ship.isHit()
-                            ship.isSank()
+                            ship.isHit() # tells the ship is was hit
+                            ship.isSank() # checks if the ship was sank
                 other.ships[y][x] = 0
                 return True
             else:
@@ -193,7 +196,7 @@ class player():
                     except Exception as e:
                         print(f'Random pick did not work trying again, {e}')
                         continue
-            case 2: # smarter AI depends on if we hit to see where to go
+            case 2: # smarter AI, depends on if we hit to see where to go
                 pass
         pass
 
@@ -242,8 +245,9 @@ def game():
         while True:
             try:
                 level = int(input('What is the computers level? '))
-                if level not in [1,2]:
-                    raise Exception("Level should be either '1' or '2'.")
+                # for now only 1 bot level
+                if level not in [1]:#,2]:
+                    raise Exception("Level should be either '1'")# or '2'.")
                 break
             except Exception as e:
                 print(f'An error occured try again, {e}')
@@ -286,6 +290,11 @@ def game():
             playerArry[p].printMap(playerArry[p].shipVals)
             while playerArry[p].turn:
                 print('Your attacks.')
+                toprint = 'Ships lengths left to sink are: '
+                for ship in playerArry[notp].army:
+                    if ship.sunk: continue
+                    else: toprint += f'{ship.length}, '
+                print(toprint)
                 playerArry[p].printMap(playerArry[p].attacks)
                 try:
                     attaX = int(input('X coord to attack. '))
